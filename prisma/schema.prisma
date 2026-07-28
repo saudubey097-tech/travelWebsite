@@ -1,0 +1,259 @@
+// Southbound — database schema
+// Run `npx prisma migrate dev --name init` once DATABASE_URL is set.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  TRAVELER
+  DRIVER
+  ADMIN
+}
+
+enum VehicleClass {
+  SEDAN
+  VAN
+  XL_VAN
+}
+
+enum BookingType {
+  DAY_TOUR
+  TRANSFER
+  HOURLY
+  CUSTOM_TRIP
+}
+
+enum BookingStatus {
+  PENDING        // created, awaiting deposit
+  CONFIRMED      // deposit paid
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentKind {
+  DEPOSIT
+  BALANCE
+  FULL
+}
+
+enum DriverStatus {
+  APPLIED
+  APPROVED
+  SUSPENDED
+}
+
+// ---------- Core identity ----------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  phone         String?
+  role          Role      @default(TRAVELER)
+  passwordHash  String?   // null for OAuth-only accounts
+  emailVerified DateTime?
+  image         String?
+
+  accounts      Account[]
+  sessions      Session[]
+  driverProfile Driver?
+  bookings      Booking[]
+  reviews       Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// NextAuth adapter models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Driver / partner domain ----------
+
+model Driver {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  status       DriverStatus @default(APPLIED)
+  licenseNo    String
+  homeRegion   String
+  bio          String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id           String       @id @default(cuid())
+  driverId     String
+  vehicleClass VehicleClass
+  make         String
+  model        String
+  seats        Int
+  photoUrl     String?      // Cloudinary URL
+  active       Boolean      @default(true)
+
+  driver   Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+}
+
+// ---------- Product catalog ----------
+
+model Region {
+  id    String @id @default(cuid())
+  name  String @unique
+  tours Tour[]
+}
+
+model Tour {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  summary       String
+  description   String
+  regionId      String
+  durationHours Int
+  priceFromCents Int
+  heroImageUrl  String   // Cloudinary URL
+  highlights    String[]
+  included      String[]
+  active        Boolean  @default(true)
+
+  region   Region    @relation(fields: [regionId], references: [id])
+  stops    TourStop[]
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TourStop {
+  id       String @id @default(cuid())
+  tourId   String
+  name     String
+  region   String
+  sequence Int
+
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Bookings & payments ----------
+
+model Booking {
+  id          String        @id @default(cuid())
+  type        BookingType
+  status      BookingStatus @default(PENDING)
+  userId      String
+  driverId    String?
+  vehicleId   String?
+  tourId      String?
+
+  // Transfer / hourly specific fields (nullable — only populated for those types)
+  pickupAddress  String?
+  dropoffAddress String?
+  distanceKm     Float?
+  durationMin    Int?
+  hours          Int?
+  vehicleClass   VehicleClass?
+
+  scheduledAt DateTime
+  paxCount    Int      @default(1)
+  totalCents  Int
+  currency    String   @default("NZD")
+  notes       String?
+
+  user    User     @relation(fields: [userId], references: [id])
+  driver  Driver?  @relation(fields: [driverId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  tour    Tour?    @relation(fields: [tourId], references: [id])
+  payments Payment[]
+  review   Review?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String
+  kind          PaymentKind
+  status        PaymentStatus @default(PENDING)
+  amountCents   Int
+  currency      String        @default("NZD")
+  providerRef   String?       // Stripe payment_intent id, etc.
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  bookingId String   @unique
+  rating    Int      // 1-5
+  body      String
+  published Boolean  @default(false)
+
+  user    User    @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+}
