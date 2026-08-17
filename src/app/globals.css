@@ -16,6 +16,10 @@ body {
   @apply bg-paper text-ink;
 }
 
+.input {
+  @apply rounded-sm border border-line bg-paper px-3 py-2.5 font-body text-sm text-ink placeholder:text-ink/40 focus:border-pine focus:outline-none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
