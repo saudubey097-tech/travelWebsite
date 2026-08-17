@@ -101,6 +101,8 @@ export async function sendCustomerMessage(_prev: ActionResult, formData: FormDat
   if (!driverAccepted || !statusOk) {
     return { ok: false, error: "Messaging opens once a driver has accepted your trip." };
   }
+  const driverId = booking.assignments[0]?.driverId;
+  if (!driverId) return { ok: false, error: "No accepted driver is available for this booking." };
 
   await db.$transaction(async (tx) => {
     await tx.bookingMessage.create({
@@ -111,7 +113,6 @@ export async function sendCustomerMessage(_prev: ActionResult, formData: FormDat
         body: parsed.data.body,
       },
     });
-    const driverId = booking.assignments[0].driverId;
     await notify(tx, {
       userId: driverId,
       type: "NEW_MESSAGE",
