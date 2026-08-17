@@ -12,14 +12,14 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: "Company",
     links: [
-      { href: "/about", label: "About" },
-      { href: "/how-it-works", label: "How it works" },
-      { href: "/contact", label: "Contact" },
+      { href: "/book", label: "Request a booking" },
+      { href: "/tours", label: "How day tours work" },
+      { href: "/transfers", label: "Get a transfer quote" },
     ],
   },
   {
     title: "Partners",
-    links: [{ href: "/drive-with-us", label: "Drive With Us" }],
+    links: [{ href: "/book", label: "Plan a custom trip" }],
   },
 ];
 
