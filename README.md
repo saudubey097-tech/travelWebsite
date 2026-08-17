@@ -14,6 +14,7 @@ A working Next.js 15 / React 19 / TypeScript / Tailwind frontend with:
 - Day tour listing + dynamic detail pages (`/tours`, `/tours/[slug]`)
 - A live transfer quote calculator (`/transfers`)
 - Hourly hire plans (`/hourly`)
+- A booking-request form (`/book`) with server-side validation and Resend email delivery
 - A small reusable component library (Button, Card, RouteLine, TourCard)
 - A data-access layer (`src/lib/tours.ts`, `src/lib/pricing.ts`) that
   isolates mock data and a placeholder pricing formula so a real
@@ -34,8 +35,9 @@ the product direction is validated. Suggested path:
    `src/lib/tours.ts` with calls to a database (Prisma + Postgres is a
    solid default) or headless CMS.
 3. **Auth** — add NextAuth (or similar) behind the existing `/auth` link.
-4. **Booking + payments** — add a booking API route and a deposit
-   payment flow (e.g. Stripe) behind the "Confirm with deposit" buttons.
+4. **Booking + payments** — booking requests now deliver to the operator by
+   email. Add database persistence, availability/driver assignment and a Stripe
+   deposit flow before describing payments as live.
 5. **Tests** — add Playwright for the quote flow and tour browsing once
    the above is real, since right now there's no backend behavior to
    meaningfully test end-to-end.
