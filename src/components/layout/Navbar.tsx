@@ -5,7 +5,7 @@ const NAV_LINKS = [
   { href: "/tours", label: "Day Tours" },
   { href: "/transfers", label: "Transfers" },
   { href: "/hourly", label: "Hourly Hire" },
-  { href: "/drive-with-us", label: "Drive With Us" },
+  { href: "/book", label: "Request a booking" },
 ];
 
 export function Navbar() {
@@ -28,10 +28,10 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           <span className="hidden font-mono text-xs text-ink/60 sm:inline">NZD</span>
           <Link
-            href="/auth"
+            href="/book"
             className="rounded-sm border border-pine px-4 py-1.5 text-sm text-pine transition-colors hover:bg-pine hover:text-paper"
           >
-            Sign in
+            Book now
           </Link>
         </div>
       </div>
