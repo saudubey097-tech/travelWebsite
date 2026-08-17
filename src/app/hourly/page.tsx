@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { HourlyPlan } from "@/types";
 import { formatMoney, vehicleLabel } from "@/lib/pricing";
-import { Button } from "@/components/ui/Button";
+import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 export const metadata: Metadata = {
@@ -38,9 +38,9 @@ export default function HourlyPage() {
               <li>Minimum {plan.minimumHours} hours</li>
               <li>One driver, one vehicle</li>
             </ul>
-            <Button size="md" className="mt-6">
+            <LinkButton href={`/book?type=HOURLY&vehicle=${plan.vehicleClass}`} size="md" className="mt-6">
               Book by the hour
-            </Button>
+            </LinkButton>
           </Card>
         ))}
       </div>
