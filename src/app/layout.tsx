@@ -25,7 +25,7 @@ const mono = IBM_Plex_Mono({
 
 // Update to the production domain before launch — this backs canonical
 // links, the sitemap and the default Open Graph/Twitter image URLs.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://southbound-travel.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://southbound.example.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
