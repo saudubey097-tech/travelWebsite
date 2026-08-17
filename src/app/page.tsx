@@ -1,7 +1,14 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Hero } from "@/components/home/Hero";
 import { ValueProps } from "@/components/home/ValueProps";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { Destinations } from "@/components/home/Destinations";
+import { FaqPreview } from "@/components/home/FaqPreview";
+import { FinalCta } from "@/components/home/FinalCta";
 import { TourCard } from "@/components/tours/TourCard";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Reveal } from "@/components/ui/Reveal";
 import { getTours } from "@/lib/tours";
 
 export default async function HomePage() {
@@ -11,27 +18,45 @@ export default async function HomePage() {
     <>
       <Hero />
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="flex items-end justify-between">
-          <div>
-            <span className="font-mono text-xs uppercase tracking-wide text-gold">Popular day tours</span>
-            <h2 className="mt-2 font-display text-2xl text-ink sm:text-3xl">
-              Iconic days out, one vehicle, one driver.
-            </h2>
-          </div>
-          <Link href="/tours" className="hidden font-body text-sm text-pine hover:underline sm:inline">
-            All day tours →
-          </Link>
-        </div>
+      <ValueProps />
 
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {tours.map((tour) => (
-            <TourCard key={tour.slug} tour={tour} />
-          ))}
+      <section className="border-t border-line bg-stone/40">
+        <div className="container-edit py-20 sm:py-24">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <Reveal>
+              <SectionHeading eyebrow="Popular day tours" title="Iconic days out, one vehicle, one driver." />
+            </Reveal>
+            <Link
+              href="/tours"
+              className="hidden items-center gap-1.5 font-body text-sm text-pine transition-colors hover:text-pineLight sm:inline-flex"
+            >
+              All day tours
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {tours.map((tour, i) => (
+              <Reveal key={tour.slug} delay={i * 0.05}>
+                <TourCard tour={tour} />
+              </Reveal>
+            ))}
+          </div>
+
+          <Link
+            href="/tours"
+            className="mt-8 flex items-center justify-center gap-1.5 font-body text-sm text-pine sm:hidden"
+          >
+            All day tours
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
         </div>
       </section>
 
-      <ValueProps />
+      <HowItWorks />
+      <Destinations />
+      <FaqPreview />
+      <FinalCta />
     </>
   );
 }
