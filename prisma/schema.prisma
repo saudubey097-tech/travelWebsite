@@ -1,259 +1,257 @@
-// Southbound — database schema
-// Run `npx prisma migrate dev --name init` once DATABASE_URL is set.
+// Southbound — role-workflow database schema.
+//
+// This replaces the earlier speculative schema (a NextAuth-adapter/Stripe/
+// Tour-catalog design that was never migrated — no migrations existed in
+// this repo). It maps directly onto the six tables specified for this
+// phase, plus one small addition: `sessions`, required for secure
+// server-side session handling. Table/column names are snake_case via
+// @@map/@map so this matches conventional Postgres naming even though the
+// Prisma models are PascalCase.
+//
+// Run `npx prisma migrate dev --name role_workflow` once DATABASE_URL
+// points at the real Neon database, then `npx prisma generate`.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Use Neon's pooled connection string here (host with "-pooler"), and the
+  // unpooled/direct connection string for directUrl — Prisma needs a direct
+  // connection to run migrations against Neon's PgBouncer-fronted pooler.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ---------- Enums ----------
 
 enum Role {
-  TRAVELER
+  CUSTOMER
+  COORDINATOR
   DRIVER
   ADMIN
+
+  @@map("app_role")
 }
 
-enum VehicleClass {
-  SEDAN
-  VAN
-  XL_VAN
-}
-
-enum BookingType {
+enum ServiceType {
   DAY_TOUR
   TRANSFER
   HOURLY
-  CUSTOM_TRIP
+  CUSTOM
+
+  @@map("service_type")
 }
 
+enum VehicleClass {
+  SEDAN  @map("sedan")
+  VAN    @map("van")
+  XL_VAN @map("xlVan")
+
+  @@map("vehicle_class")
+}
+
+// The full lifecycle from the spec, plus terminal/exception states.
 enum BookingStatus {
-  PENDING        // created, awaiting deposit
-  CONFIRMED      // deposit paid
+  SUBMITTED
+  PENDING_ASSIGNMENT
+  ACCEPTED
+  IN_COMMUNICATION
+  SCHEDULED
   IN_PROGRESS
   COMPLETED
+  DECLINED
+  REASSIGNMENT_REQUIRED
   CANCELLED
+
+  @@map("booking_status")
 }
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
+enum AssignmentStatus {
+  OFFERED
+  ACCEPTED
+  DECLINED
+  REVOKED
+
+  @@map("assignment_status")
 }
 
-enum PaymentKind {
-  DEPOSIT
-  BALANCE
-  FULL
+enum MessageVisibility {
+  CUSTOMER_VISIBLE
+  INTERNAL
+
+  @@map("message_visibility")
 }
 
-enum DriverStatus {
-  APPLIED
-  APPROVED
-  SUSPENDED
-}
+// ---------- Identity & sessions ----------
 
-// ---------- Core identity ----------
+model AppUser {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String  @map("password_hash")
+  name         String
+  phone        String?
+  role         Role    @default(CUSTOMER)
+  active       Boolean @default(true)
 
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  phone         String?
-  role          Role      @default(TRAVELER)
-  passwordHash  String?   // null for OAuth-only accounts
-  emailVerified DateTime?
-  image         String?
+  // Driver-specific profile fields. Null for non-drivers.
+  driverLicenseNo    String?       @map("driver_license_no")
+  vehicleClass       VehicleClass? @map("vehicle_class")
+  vehicleCapacity    Int?          @map("vehicle_capacity")
+  vehicleDescription String?       @map("vehicle_description")
+  driverAvailable    Boolean       @default(true) @map("driver_available")
 
-  accounts      Account[]
-  sessions      Session[]
-  driverProfile Driver?
-  bookings      Booking[]
-  reviews       Review[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+  sessions           Session[]
+  bookingsAsCustomer BookingRequest[]  @relation("CustomerBookings")
+  bookingsCoordinated BookingRequest[] @relation("CoordinatedBookings")
+  assignments        BookingAssignment[] @relation("DriverAssignments")
+  assignmentsOffered  BookingAssignment[] @relation("OfferedByCoordinator")
+  messagesSent       BookingMessage[]
+  events             BookingEvent[]
+  notifications      Notification[]
 
-// NextAuth adapter models
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  @@map("app_users")
+  @@index([role])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
-// ---------- Driver / partner domain ----------
-
-model Driver {
-  id           String       @id @default(cuid())
-  userId       String       @unique
-  status       DriverStatus @default(APPLIED)
-  licenseNo    String
-  homeRegion   String
-  bio          String?
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicles Vehicle[]
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Vehicle {
-  id           String       @id @default(cuid())
-  driverId     String
-  vehicleClass VehicleClass
-  make         String
-  model        String
-  seats        Int
-  photoUrl     String?      // Cloudinary URL
-  active       Boolean      @default(true)
-
-  driver   Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-}
-
-// ---------- Product catalog ----------
-
-model Region {
-  id    String @id @default(cuid())
-  name  String @unique
-  tours Tour[]
-}
-
-model Tour {
-  id            String   @id @default(cuid())
-  slug          String   @unique
-  title         String
-  summary       String
-  description   String
-  regionId      String
-  durationHours Int
-  priceFromCents Int
-  heroImageUrl  String   // Cloudinary URL
-  highlights    String[]
-  included      String[]
-  active        Boolean  @default(true)
-
-  region   Region    @relation(fields: [regionId], references: [id])
-  stops    TourStop[]
-  bookings Booking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model TourStop {
-  id       String @id @default(cuid())
-  tourId   String
-  name     String
-  region   String
-  sequence Int
-
-  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
-}
-
-// ---------- Bookings & payments ----------
-
-model Booking {
-  id          String        @id @default(cuid())
-  type        BookingType
-  status      BookingStatus @default(PENDING)
-  userId      String
-  driverId    String?
-  vehicleId   String?
-  tourId      String?
-
-  // Transfer / hourly specific fields (nullable — only populated for those types)
-  pickupAddress  String?
-  dropoffAddress String?
-  distanceKm     Float?
-  durationMin    Int?
-  hours          Int?
-  vehicleClass   VehicleClass?
-
-  scheduledAt DateTime
-  paxCount    Int      @default(1)
-  totalCents  Int
-  currency    String   @default("NZD")
-  notes       String?
-
-  user    User     @relation(fields: [userId], references: [id])
-  driver  Driver?  @relation(fields: [driverId], references: [id])
-  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
-  tour    Tour?    @relation(fields: [tourId], references: [id])
-  payments Payment[]
-  review   Review?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([status])
-}
-
-model Payment {
-  id            String        @id @default(cuid())
-  bookingId     String
-  kind          PaymentKind
-  status        PaymentStatus @default(PENDING)
-  amountCents   Int
-  currency      String        @default("NZD")
-  providerRef   String?       // Stripe payment_intent id, etc.
-
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-}
-
-model Review {
   id        String   @id @default(cuid())
-  userId    String
-  bookingId String   @unique
-  rating    Int      // 1-5
-  body      String
-  published Boolean  @default(false)
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user    User    @relation(fields: [userId], references: [id])
-  booking Booking @relation(fields: [bookingId], references: [id])
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
+  @@map("sessions")
+  @@index([userId])
+}
+
+// ---------- Booking domain ----------
+
+model BookingRequest {
+  id     String @id @default(cuid())
+  // Customer-facing reference, e.g. "SB-8K2F1A".
+  reference String @unique
+
+  customerId    String  @map("customer_id")
+  coordinatorId String? @map("coordinator_id")
+
+  serviceType ServiceType   @map("service_type")
+  status      BookingStatus @default(SUBMITTED)
+
+  // Trip details. Not every field applies to every service type.
+  tourSlug       String?       @map("tour_slug")
+  pickupAddress  String?       @map("pickup_address")
+  dropoffAddress String?       @map("dropoff_address")
+  vehicleClass   VehicleClass? @map("vehicle_class")
+  travelDate     DateTime      @map("travel_date")
+  paxCount       Int           @map("pax_count")
+  notes          String?
+
+  // Money stored as integer cents. quotedPriceCents is the indicative
+  // figure from the public calculator; confirmedPriceCents is set by a
+  // coordinator and is the only figure ever presented as final.
+  quotedPriceCents    Int?    @map("quoted_price_cents")
+  confirmedPriceCents Int?    @map("confirmed_price_cents")
+  currency            String  @default("NZD")
+
+  cancelledAt DateTime? @map("cancelled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  customer    AppUser  @relation("CustomerBookings", fields: [customerId], references: [id])
+  coordinator AppUser? @relation("CoordinatedBookings", fields: [coordinatorId], references: [id])
+
+  assignments BookingAssignment[]
+  messages    BookingMessage[]
+  events      BookingEvent[]
+
+  @@map("booking_requests")
+  @@index([customerId])
+  @@index([coordinatorId])
+  @@index([status])
+  @@index([serviceType])
+  @@index([travelDate])
+}
+
+model BookingAssignment {
+  id               String           @id @default(cuid())
+  bookingRequestId String           @map("booking_request_id")
+  driverId         String           @map("driver_id")
+  offeredById      String           @map("offered_by_id")
+  status           AssignmentStatus @default(OFFERED)
+
+  offeredAt    DateTime  @default(now()) @map("offered_at")
+  respondedAt  DateTime? @map("responded_at")
+  declineReason String?  @map("decline_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bookingRequest BookingRequest @relation(fields: [bookingRequestId], references: [id], onDelete: Cascade)
+  driver         AppUser        @relation("DriverAssignments", fields: [driverId], references: [id])
+  offeredBy      AppUser        @relation("OfferedByCoordinator", fields: [offeredById], references: [id])
+
+  @@map("booking_assignments")
+  @@index([bookingRequestId, status])
+  @@index([driverId])
+}
+
+model BookingMessage {
+  id               String             @id @default(cuid())
+  bookingRequestId String             @map("booking_request_id")
+  senderId         String             @map("sender_id")
+  visibility       MessageVisibility
+  body             String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bookingRequest BookingRequest @relation(fields: [bookingRequestId], references: [id], onDelete: Cascade)
+  sender         AppUser        @relation(fields: [senderId], references: [id])
+
+  @@map("booking_messages")
+  @@index([bookingRequestId, createdAt])
+}
+
+model BookingEvent {
+  id               String  @id @default(cuid())
+  bookingRequestId String  @map("booking_request_id")
+  actorId          String? @map("actor_id")
+
+  previousStatus BookingStatus? @map("previous_status")
+  newStatus      BookingStatus  @map("new_status")
+  // Safe, non-secret context only (e.g. { "declineReason": "..." }).
+  context Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bookingRequest BookingRequest @relation(fields: [bookingRequestId], references: [id], onDelete: Cascade)
+  actor          AppUser?       @relation(fields: [actorId], references: [id])
+
+  @@map("booking_events")
+  @@index([bookingRequestId, createdAt])
+}
+
+model Notification {
+  id     String  @id @default(cuid())
+  userId String  @map("user_id")
+  type   String
+  title  String
+  body   String
+  link   String?
+  read   Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+  @@index([userId, read])
 }
