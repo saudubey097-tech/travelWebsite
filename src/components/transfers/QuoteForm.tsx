@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { VehicleClass } from "@/types";
 import { estimateTransfer, formatMoney, formatDuration, vehicleLabel } from "@/lib/pricing";
 import { RouteLine } from "@/components/ui/RouteLine";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const VEHICLES: VehicleClass[] = ["sedan", "van", "xlVan"];
@@ -32,6 +32,15 @@ export function QuoteForm() {
     () => (submitted && distanceKm > 0 ? estimateTransfer(pickup, dropoff, vehicleClass, distanceKm) : null),
     [submitted, distanceKm, pickup, dropoff, vehicleClass]
   );
+  const bookingHref = quote
+    ? `/book?${new URLSearchParams({
+        type: "TRANSFER",
+        pickup: quote.pickup,
+        dropoff: quote.dropoff,
+        vehicle: quote.vehicleClass,
+        quotedPrice: String(quote.price.amount),
+      }).toString()}`
+    : "/book";
 
   return (
     <Card className="p-6 sm:p-8">
@@ -111,9 +120,9 @@ export function QuoteForm() {
               </span>
             </div>
           </div>
-          <Button size="lg" className="mt-6 w-full">
+          <LinkButton href={bookingHref} size="lg" className="mt-6 w-full">
             Confirm with {quote.depositPct}% deposit
-          </Button>
+          </LinkButton>
         </div>
       )}
     </Card>
