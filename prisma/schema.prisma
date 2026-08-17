@@ -17,11 +17,10 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Use Neon's pooled connection string here (host with "-pooler"), and the
-  // unpooled/direct connection string for directUrl — Prisma needs a direct
-  // connection to run migrations against Neon's PgBouncer-fronted pooler.
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  // The deployed application uses Neon's pooled connection string. Database
+  // migrations are applied through the controlled Neon migration workflow,
+  // so the app does not require a second direct connection secret at runtime.
+  url = env("DATABASE_URL")
 }
 
 // ---------- Enums ----------
