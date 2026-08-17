@@ -22,6 +22,10 @@ export interface DayTour {
   stops: RouteStop[];
   highlights: string[];
   included: string[];
+  /** Small destination/experience tags shown on the card, e.g. "Waterfall", "Wildlife". Optional for backward compatibility. */
+  tags?: string[];
+  /** Maximum guests per vehicle for this tour. Optional for backward compatibility. */
+  maxGroupSize?: number;
 }
 
 export interface HourlyPlan {
