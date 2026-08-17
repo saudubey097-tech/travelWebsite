@@ -15,7 +15,7 @@ export const tours: DayTour[] = [
     durationHours: 11,
     priceFrom: { amount: 860, currency: "NZD" },
     heroImage:
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&q=80",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&q=80&auto=format&fit=crop",
     stops: [
       { name: "Auckland CBD", region: "Auckland" },
       { name: "Matamata district", region: "Waikato" },
@@ -26,6 +26,8 @@ export const tours: DayTour[] = [
       "Return via scenic Waikato back-roads",
     ],
     included: ["Private vehicle for your group", "Licensed local driver", "Bottled water on board"],
+    tags: ["Film Locations", "Countryside"],
+    maxGroupSize: 11,
   },
   {
     slug: "geothermal-valley-day",
@@ -37,13 +39,15 @@ export const tours: DayTour[] = [
     durationHours: 11,
     priceFrom: { amount: 880, currency: "NZD" },
     heroImage:
-      "https://images.unsplash.com/photo-1589802829985-817e51171b92?w=1200&q=80",
+      "https://images.unsplash.com/photo-1589802829985-817e51171b92?w=1600&q=80&auto=format&fit=crop",
     stops: [
       { name: "Auckland CBD", region: "Auckland" },
       { name: "Rotorua", region: "Bay of Plenty" },
     ],
     highlights: ["Geyser field entry included", "Redwood forest walk", "Optional lakeside lunch stop"],
     included: ["Private vehicle for your group", "Licensed local driver", "Bottled water on board"],
+    tags: ["Geothermal", "Forest"],
+    maxGroupSize: 11,
   },
   {
     slug: "northland-harbour-day",
@@ -55,13 +59,15 @@ export const tours: DayTour[] = [
     durationHours: 12,
     priceFrom: { amount: 960, currency: "NZD" },
     heroImage:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80&auto=format&fit=crop",
     stops: [
       { name: "Auckland CBD", region: "Auckland" },
       { name: "Bay of Islands", region: "Northland" },
     ],
     highlights: ["Treaty grounds entry included", "Free time in Russell", "Coastal lookout stops"],
     included: ["Private vehicle for your group", "Licensed local driver", "Bottled water on board"],
+    tags: ["Coastline", "History"],
+    maxGroupSize: 11,
   },
   {
     slug: "cave-glowworm-transfer",
@@ -73,12 +79,14 @@ export const tours: DayTour[] = [
     durationHours: 10,
     priceFrom: { amount: 800, currency: "NZD" },
     heroImage:
-      "https://images.unsplash.com/photo-1500759285222-a95626b934cb?w=1200&q=80",
+      "https://images.unsplash.com/photo-1500759285222-a95626b934cb?w=1600&q=80&auto=format&fit=crop",
     stops: [
       { name: "Auckland CBD", region: "Auckland" },
       { name: "Waitomo", region: "Waikato" },
     ],
     highlights: ["Glowworm cave tour included", "Film-set grounds entry included", "Can end in Rotorua instead of Auckland"],
     included: ["Private vehicle for your group", "Licensed local driver", "Bottled water on board"],
+    tags: ["Glowworm Caves", "Underground"],
+    maxGroupSize: 11,
   },
 ];
