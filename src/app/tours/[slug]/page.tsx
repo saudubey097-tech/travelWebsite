@@ -72,7 +72,7 @@ export default async function TourDetailPage({ params }: Props) {
           <span className="font-mono text-xs uppercase text-ink/50">From</span>
           <div className="font-display text-3xl text-pine">{formatMoney(tour.priceFrom)}</div>
           <p className="font-mono text-xs text-ink/50">per vehicle · {tour.durationHours} hrs</p>
-          <LinkButton href={`/tours/${tour.slug}/book`} size="lg" className="mt-5 w-full">
+          <LinkButton href={`/book?type=DAY_TOUR&tour=${encodeURIComponent(tour.slug)}`} size="lg" className="mt-5 w-full">
             Check availability
           </LinkButton>
           <p className="mt-3 font-body text-xs text-ink/50">
