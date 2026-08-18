@@ -16,7 +16,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  // The Vercel/Neon integration supplies DATABASE_URL in every environment.
   url = env("DATABASE_URL")
 }
 
@@ -91,6 +92,17 @@ model AppUser {
   role         Role    @default(CUSTOMER)
   active       Boolean @default(true)
 
+  // --- Account security state ---
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  passwordUpdatedAt DateTime  @default(now()) @map("password_updated_at")
+
+  // --- Admin MFA (TOTP) ---
+  mfaEnabled       Boolean   @default(false) @map("mfa_enabled")
+  mfaSecretCipher  String?   @map("mfa_secret_cipher") // AES-256-GCM ciphertext, see src/lib/auth/mfa.ts
+  mfaEnabledAt     DateTime? @map("mfa_enabled_at")
+  recoveryCodes    RecoveryCode[]
+
   // Driver-specific profile fields. Null for non-drivers.
   driverLicenseNo    String?       @map("driver_license_no")
   vehicleClass       VehicleClass? @map("vehicle_class")
@@ -111,23 +123,122 @@ model AppUser {
   notifications      Notification[]
   auditLogsAsActor   AuditLog[]        @relation("AuditActor")
   auditLogsAsTarget  AuditLog[]        @relation("AuditTarget")
+  securityEventsAsUser   SecurityEvent[]        @relation("SecurityEventUser")
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  invitationsSent         StaffInvitationToken[] @relation("InvitedBy")
 
   @@map("app_users")
   @@index([role])
+  @@index([email])
 }
 
-model Session {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  tokenHash String   @unique @map("token_hash")
-  expiresAt DateTime @map("expires_at")
-  userAgent String?  @map("user_agent")
+// One-time TOTP recovery codes. Each row is a single code, hashed — never
+// store recovery codes in plaintext. A row is deleted once used so a code
+// can never be replayed.
+model RecoveryCode {
+  id       String  @id @default(cuid())
+  userId   String  @map("user_id")
+  codeHash String  @map("code_hash")
+  usedAt   DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("recovery_codes")
+  @@index([userId])
+}
+
+// A signed-in device/browser. Extended beyond the original minimal auth
+// session so a user can see and manage where they're signed in
+// ("session list", "revoke individual session", "logout all devices").
+model Session {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  tokenHash     String    @unique @map("token_hash")
+  expiresAt     DateTime  @map("expires_at")
+  userAgent     String?   @map("user_agent")
+  ipAddress     String?   @map("ip_address")
+  lastActiveAt  DateTime  @default(now()) @map("last_active_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
   @@index([userId])
+}
+
+// Single-use, expiring token for verifying a customer's email address.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verification_tokens")
+  @@index([userId])
+}
+
+// Single-use, expiring token for the forgot-password flow.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+  @@index([userId])
+}
+
+// An Admin-issued invitation to become staff (Coordinator or Driver). No
+// AppUser row exists until the invitee accepts and sets their own password,
+// so an expired unused invite never leaves an orphan account behind.
+model StaffInvitationToken {
+  id            String    @id @default(cuid())
+  email         String
+  name          String
+  role          Role
+  invitedById   String    @map("invited_by_id")
+  tokenHash     String    @unique @map("token_hash")
+  driverProfile Json?     @map("driver_profile")
+  expiresAt     DateTime  @map("expires_at")
+  consumedAt    DateTime? @map("consumed_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  invitedBy AppUser @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@map("staff_invitation_tokens")
+  @@index([email])
+}
+
+// Security-relevant event log — sign-in, failed sign-in, password reset,
+// role change, MFA changes, and session revocation. It also backs login
+// attempt rate limiting, including failed logins without a user row.
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  email     String?  // present on failed logins even when no account matches
+  type      String
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user AppUser? @relation("SecurityEventUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("security_audit_logs")
+  @@index([userId, createdAt])
+  @@index([email, type, createdAt])
 }
 
 // ---------- Booking domain ----------
