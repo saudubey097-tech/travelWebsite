@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listUsers } from "@/lib/actions/admin";
+import { listPendingInvitations } from "@/lib/actions/invitations";
 import { requireRole } from "@/lib/auth/session";
-import { CreateStaffUserForm } from "@/components/workflow/CreateStaffUserForm";
+import { InviteStaffForm } from "@/components/workflow/InviteStaffForm";
+import { PendingInvitationsList } from "@/components/workflow/PendingInvitationsList";
 import { UserRow } from "@/components/workflow/UserRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { Role } from "@prisma/client";
@@ -24,7 +26,11 @@ export default async function AdminUsersPage({
   const sp = await searchParams;
   const activeTab = (TABS.find((t) => t.key === sp.role)?.key ?? "CUSTOMER") as Role;
 
-  const [me, users] = await Promise.all([requireRole("ADMIN"), listUsers()]);
+  const [me, users, pendingInvitations] = await Promise.all([
+    requireRole("ADMIN"),
+    listUsers(),
+    listPendingInvitations(),
+  ]);
 
   const term = (sp.q ?? "").trim().toLowerCase();
   const filtered = users.filter(
@@ -35,7 +41,17 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-8">
-      <CreateStaffUserForm />
+      <InviteStaffForm />
+      <PendingInvitationsList
+        invitations={pendingInvitations.map((inv) => ({
+          id: inv.id,
+          name: inv.name,
+          email: inv.email,
+          role: inv.role,
+          expiresAt: inv.expiresAt,
+          invitedBy: inv.invitedBy,
+        }))}
+      />
 
       <div>
         <nav className="mb-4 flex flex-wrap gap-1 border-b border-line pb-3">
