@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/session";
-import { hashPassword } from "@/lib/auth/password";
+import { recordSecurityEvent } from "@/lib/auth/security-log";
 import { transitionBooking } from "@/lib/booking/transition";
 import { notify } from "@/lib/booking/notify";
 import {
-  createStaffUserSchema,
   setUserActiveSchema,
   changeUserRoleSchema,
   updateDriverProfileSchema,
@@ -35,34 +34,9 @@ export async function listUsers() {
   });
 }
 
-/** Coordinators, Drivers, and Admins are created only by an Admin — never self-registered. */
-export async function createStaffUser(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  await requireRole("ADMIN");
-  const parsed = createStaffUserSchema.safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) return { ok: false, error: "Please check the new user's details." };
-  const data = parsed.data;
-
-  const existing = await db.appUser.findUnique({ where: { email: data.email } });
-  if (existing) return { ok: false, error: "A user with that email already exists." };
-
-  const passwordHash = await hashPassword(data.temporaryPassword);
-  await db.appUser.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      role: data.role,
-      passwordHash,
-      driverLicenseNo: data.driverLicenseNo,
-      vehicleClass: data.vehicleClass,
-      vehicleCapacity: data.vehicleCapacity,
-      vehicleDescription: data.vehicleDescription,
-    },
-  });
-
-  revalidatePath("/admin/users");
-  return { ok: true };
-}
+// Direct staff creation with an admin-chosen temporary password has been
+// replaced by the invitation flow — see src/lib/actions/invitations.ts
+// (inviteStaff/acceptInvitation). /admin/users now uses that instead.
 
 export async function setUserActive(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
@@ -127,6 +101,11 @@ export async function changeUserRole(_prev: ActionResult, formData: FormData): P
       previousValue: target.role,
       newValue: parsed.data.role,
     },
+  });
+  await recordSecurityEvent({
+    userId: admin.id,
+    type: "ROLE_CHANGED",
+    metadata: { targetUserId: target.id, previousRole: target.role, newRole: parsed.data.role },
   });
   revalidatePath("/admin/users");
   revalidatePath(`/admin/users/${target.id}`);
