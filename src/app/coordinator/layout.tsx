@@ -18,6 +18,7 @@ const QUEUES = [
 export default async function CoordinatorLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("COORDINATOR", "ADMIN").catch(() => null);
   if (!user) redirect("/login?next=/coordinator");
+  if (user.mustChangePassword) redirect("/account/change-password");
   const notifications = await listMyNotifications();
 
   return (
@@ -29,6 +30,9 @@ export default async function CoordinatorLayout({ children }: { children: React.
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell initial={notifications} />
+          <Link href="/account/security" className="font-body text-sm text-ink/60 hover:text-ink">
+            Security
+          </Link>
           <SignOutButton />
         </div>
       </div>
