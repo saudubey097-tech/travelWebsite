@@ -77,6 +77,7 @@ export async function submitBookingRequest(input: SubmitBookingInput) {
     await recordEvent(tx, {
       bookingRequestId: created.id,
       actorId: input.authedUserId,
+      eventType: "BOOKING_SUBMITTED",
       previousStatus: null,
       newStatus: "SUBMITTED",
       context: { source: input.authedUserId ? "authenticated" : "public_form" },
