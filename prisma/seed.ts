@@ -27,7 +27,7 @@ async function upsertUser(data: {
   return db.appUser.upsert({
     where: { email: data.email },
     update: {},
-    create: { ...data, passwordHash },
+    create: { ...data, passwordHash, emailVerifiedAt: new Date() },
   });
 }
 
