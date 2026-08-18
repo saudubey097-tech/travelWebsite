@@ -142,13 +142,13 @@ export async function sendCustomerMessage(_prev: ActionResult, formData: FormDat
   });
   if (!booking) return { ok: false, error: "Booking not found." };
 
-  const driverAccepted = booking.assignments.length > 0;
+  const acceptedAssignment = booking.assignments[0];
+  const driverAccepted = Boolean(acceptedAssignment);
   const statusOk = (MESSAGEABLE_STATUSES as readonly string[]).includes(booking.status);
   if (!driverAccepted || !statusOk) {
     return { ok: false, error: "Messaging opens once a driver has accepted your trip." };
   }
-  const driverId = booking.assignments[0]?.driverId;
-  if (!driverId) return { ok: false, error: "No accepted driver is available for this booking." };
+  const driverId = acceptedAssignment.driverId;
 
   await db.$transaction(async (tx) => {
     await tx.bookingMessage.create({
