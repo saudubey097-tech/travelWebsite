@@ -28,6 +28,9 @@ export async function checkLoginLockout(email: string): Promise<{ locked: boolea
   }
 
   const oldestOfWindow = recentFailures[recentFailures.length - 1];
+  if (!oldestOfWindow) {
+    return { locked: false, attempts: recentFailures.length };
+  }
   const retryAfterMs = LOGIN_WINDOW_MS - (Date.now() - oldestOfWindow.createdAt.getTime());
   return { locked: retryAfterMs > 0, attempts: recentFailures.length, retryAfterMs: Math.max(0, retryAfterMs) };
 }
