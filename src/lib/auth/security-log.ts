@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { headers } from "next/headers";
+import type { Prisma } from "@prisma/client";
 
 /**
  * The full set of security-relevant event types this app records. Kept as
@@ -44,7 +45,7 @@ export async function recordSecurityEvent(params: {
       type: params.type,
       ipAddress: clientIp(h),
       userAgent: h.get("user-agent")?.slice(0, 255),
-      metadata: params.metadata,
+      metadata: params.metadata as Prisma.InputJsonValue | undefined,
     },
   });
 }
