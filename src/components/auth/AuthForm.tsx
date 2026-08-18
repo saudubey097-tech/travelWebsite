@@ -16,6 +16,9 @@ export function SignInForm({ action }: { action: (prev: ActionResult, formData: 
       <form action={formAction} className="grid gap-5">
         <Field label="Email" name="email" type="email" required autoComplete="email" />
         <Field label="Password" name="password" type="password" required autoComplete="current-password" />
+        <Link href="/forgot-password" className="-mt-2 text-right font-body text-xs text-pine underline">
+          Forgot your password?
+        </Link>
         {state.error && <p className="font-body text-sm text-red-700">{state.error}</p>}
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
