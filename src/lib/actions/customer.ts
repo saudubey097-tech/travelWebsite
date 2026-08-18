@@ -143,9 +143,8 @@ export async function sendCustomerMessage(_prev: ActionResult, formData: FormDat
   if (!booking) return { ok: false, error: "Booking not found." };
 
   const acceptedAssignment = booking.assignments[0];
-  const driverAccepted = Boolean(acceptedAssignment);
   const statusOk = (MESSAGEABLE_STATUSES as readonly string[]).includes(booking.status);
-  if (!driverAccepted || !statusOk) {
+  if (!acceptedAssignment || !statusOk) {
     return { ok: false, error: "Messaging opens once a driver has accepted your trip." };
   }
   const driverId = acceptedAssignment.driverId;
