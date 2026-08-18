@@ -44,7 +44,8 @@ describe("admin-only actions", () => {
 
     session.current = makeUser({ id: "admin1", role: "ADMIN" });
     const all = await listAllBookings({});
-    expect(all).toHaveLength(2);
+    expect(all.bookings).toHaveLength(2);
+    expect(all.total).toBe(2);
   });
 
   it("blocks a customer from admin actions", async () => {

@@ -1,21 +1,24 @@
 import { notFound } from "next/navigation";
 import { Calendar, Users, MapPin, Car, TriangleAlert } from "lucide-react";
-import { getMyBooking } from "@/lib/actions/customer";
-import { sendCustomerMessage } from "@/lib/actions/customer";
+import { getMyBooking, sendCustomerMessage, listMyNotificationHistory } from "@/lib/actions/customer";
 import { requireUser } from "@/lib/auth/session";
 import { StatusBadge } from "@/components/workflow/StatusBadge";
 import { Timeline } from "@/components/workflow/Timeline";
 import { ConversationPanel } from "@/components/workflow/ConversationPanel";
 import { Card } from "@/components/ui/Card";
 import { formatMoney, vehicleLabel } from "@/lib/pricing";
+import { formatNZDate } from "@/lib/format";
 import { CancelBookingButton } from "@/components/workflow/CancelBookingButton";
+import { BookingNotesForm } from "@/components/workflow/BookingNotesForm";
+import { NotificationHistoryPanel } from "@/components/workflow/NotificationHistoryPanel";
 
 const MESSAGEABLE = ["IN_COMMUNICATION", "SCHEDULED", "IN_PROGRESS"];
 const CANCELLABLE = ["SUBMITTED", "PENDING_ASSIGNMENT", "ACCEPTED", "IN_COMMUNICATION", "SCHEDULED", "REASSIGNMENT_REQUIRED"];
+const NOTES_EDITABLE = ["SUBMITTED", "PENDING_ASSIGNMENT"];
 
 export default async function CustomerBookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [user, booking] = await Promise.all([requireUser(), getMyBooking(id)]);
+  const [user, booking, notifications] = await Promise.all([requireUser(), getMyBooking(id), listMyNotificationHistory()]);
   if (!booking) notFound();
 
   const acceptedAssignment = booking.assignments.find((a) => a.status === "ACCEPTED");
@@ -36,7 +39,7 @@ export default async function CustomerBookingDetailPage({ params }: { params: Pr
           <dl className="grid gap-3 font-body text-sm sm:grid-cols-2">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gold" aria-hidden />
-              {new Date(booking.travelDate).toLocaleDateString("en-NZ", { dateStyle: "full", timeZone: "Pacific/Auckland" })}
+              {formatNZDate(booking.travelDate, "full")}
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gold" aria-hidden />
@@ -57,6 +60,9 @@ export default async function CustomerBookingDetailPage({ params }: { params: Pr
           </dl>
           {booking.notes && (
             <p className="mt-4 border-t border-line pt-4 font-body text-sm text-ink/65">{booking.notes}</p>
+          )}
+          {NOTES_EDITABLE.includes(booking.status) && (
+            <BookingNotesForm bookingId={booking.id} notes={booking.notes} />
           )}
         </Card>
 
@@ -105,6 +111,8 @@ export default async function CustomerBookingDetailPage({ params }: { params: Pr
           action={sendCustomerMessage}
           currentUserId={user.id}
         />
+
+        <NotificationHistoryPanel notifications={notifications} />
       </div>
     </div>
   );

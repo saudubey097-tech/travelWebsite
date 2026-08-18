@@ -24,6 +24,29 @@ export async function listMyBookings() {
   });
 }
 
+/** Summary counts for the customer dashboard cards. */
+export async function getMyBookingSummary() {
+  const user = await requireUser();
+  const [active, upcoming, completed, unreadMessages] = await Promise.all([
+    db.bookingRequest.count({
+      where: { customerId: user.id, status: { in: ["IN_COMMUNICATION", "IN_PROGRESS"] } },
+    }),
+    db.bookingRequest.count({
+      where: { customerId: user.id, status: { in: ["ACCEPTED", "SCHEDULED"] } },
+    }),
+    db.bookingRequest.count({ where: { customerId: user.id, status: "COMPLETED" } }),
+    db.notification.count({ where: { userId: user.id, read: false, type: "NEW_MESSAGE" } }),
+  ]);
+  return { active, upcoming, completed, unreadMessages };
+}
+
+/** Full notification history for the signed-in customer — used by the
+ *  dashboard's "view notification history" action. */
+export async function listMyNotificationHistory() {
+  const user = await requireUser();
+  return db.notification.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 100 });
+}
+
 /**
  * IDOR-safe: the where clause filters by (id AND customerId) together, so a
  * customer requesting someone else's booking id simply gets `null` back —
@@ -62,14 +85,16 @@ export async function cancelBooking(_prev: ActionResult, formData: FormData): Pr
         currentStatus: booking.status,
         newStatus: "CANCELLED",
         actorId: user.id,
-        context: { cancelledBy: "customer" },
+        context: { cancelledBy: "customer", reason: parsed.data.reason },
       });
       if (booking.coordinatorId) {
         await notify(tx, {
           userId: booking.coordinatorId,
           type: "BOOKING_CANCELLED",
           title: "Customer cancelled a request",
-          body: `${booking.reference} was cancelled by the customer.`,
+          body: parsed.data.reason
+            ? `${booking.reference} was cancelled by the customer: ${parsed.data.reason}`
+            : `${booking.reference} was cancelled by the customer.`,
           link: `/coordinator/bookings/${booking.id}`,
         });
       }
@@ -79,6 +104,27 @@ export async function cancelBooking(_prev: ActionResult, formData: FormData): Pr
   }
 
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+const EDITABLE_BY_CUSTOMER = ["SUBMITTED", "PENDING_ASSIGNMENT"] as const;
+
+/** Customer can adjust their own trip notes only before a coordinator has
+ *  confirmed details — once assignment is underway, changes go through the
+ *  coordinator instead so the audit trail stays coherent. */
+export async function updateMyBookingNotes(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const notes = String(formData.get("notes") ?? "").slice(0, 2000);
+
+  const booking = await db.bookingRequest.findFirst({ where: { id: bookingId, customerId: user.id } });
+  if (!booking) return { ok: false, error: "Booking not found." };
+  if (!(EDITABLE_BY_CUSTOMER as readonly string[]).includes(booking.status)) {
+    return { ok: false, error: "Trip details can no longer be edited directly — message your coordinator instead." };
+  }
+
+  await db.bookingRequest.update({ where: { id: bookingId }, data: { notes } });
+  revalidatePath(`/dashboard/bookings/${bookingId}`);
   return { ok: true };
 }
 

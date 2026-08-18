@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { listAllBookings } from "@/lib/actions/admin";
 import { BookingCard } from "@/components/workflow/BookingCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import type { BookingStatus, ServiceType } from "@prisma/client";
 
 export const metadata: Metadata = { title: "All bookings", robots: { index: false } };
@@ -22,17 +24,40 @@ const SERVICE_TYPES: ServiceType[] = ["DAY_TOUR", "TRANSFER", "HOURLY", "CUSTOM"
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; serviceType?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ status?: string; serviceType?: string; from?: string; to?: string; q?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const status = STATUSES.includes(sp.status as BookingStatus) ? (sp.status as BookingStatus) : undefined;
   const serviceType = SERVICE_TYPES.includes(sp.serviceType as ServiceType) ? (sp.serviceType as ServiceType) : undefined;
+  const page = Math.max(1, Number(sp.page) || 1);
 
-  const bookings = await listAllBookings({ status, serviceType, from: sp.from, to: sp.to });
+  const { bookings, page: currentPage, totalPages, total } = await listAllBookings({
+    status,
+    serviceType,
+    from: sp.from,
+    to: sp.to,
+    search: sp.q,
+    page,
+  });
+
+  function hrefFor(nextPage: number) {
+    const params = new URLSearchParams();
+    if (sp.status) params.set("status", sp.status);
+    if (sp.serviceType) params.set("serviceType", sp.serviceType);
+    if (sp.from) params.set("from", sp.from);
+    if (sp.to) params.set("to", sp.to);
+    if (sp.q) params.set("q", sp.q);
+    params.set("page", String(nextPage));
+    return `/admin/bookings?${params.toString()}`;
+  }
 
   return (
     <div>
       <form className="mb-8 flex flex-wrap items-end gap-3 border-b border-line pb-6" method="get">
+        <label className="flex flex-col gap-1.5">
+          <span className="font-mono text-xs uppercase text-ink/50">Search</span>
+          <input type="search" name="q" defaultValue={sp.q ?? ""} placeholder="Reference, customer, route…" className="input" />
+        </label>
         <label className="flex flex-col gap-1.5">
           <span className="font-mono text-xs uppercase text-ink/50">Status</span>
           <select name="status" defaultValue={status ?? ""} className="input">
@@ -68,10 +93,10 @@ export default async function AdminBookingsPage({
         </button>
       </form>
 
+      <p className="mb-4 font-mono text-[11px] uppercase tracking-wide text-ink/40">{total} bookings</p>
+
       {bookings.length === 0 ? (
-        <p className="rounded-md border border-dashed border-line p-10 text-center font-body text-sm text-ink/50">
-          No bookings match those filters.
-        </p>
+        <EmptyState title="No bookings match those filters." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {bookings.map((b) => (
@@ -88,11 +113,14 @@ export default async function AdminBookingsPage({
                 pickupAddress: b.pickupAddress,
                 dropoffAddress: b.dropoffAddress,
                 customerName: b.customer.name,
+                priority: b.priority,
               }}
             />
           ))}
         </div>
       )}
+
+      <Pagination page={currentPage} totalPages={totalPages} buildHref={hrefFor} />
     </div>
   );
 }

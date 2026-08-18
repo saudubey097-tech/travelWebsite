@@ -23,3 +23,12 @@ export const changeUserRoleSchema = z.object({
   userId: z.string().min(1).max(64),
   role: roleSchema,
 });
+
+export const updateDriverProfileSchema = z.object({
+  userId: z.string().min(1).max(64),
+  vehicleClass: z.enum(["SEDAN", "VAN", "XL_VAN"]).optional(),
+  vehicleCapacity: z.coerce.number().int().min(1).max(20).optional(),
+  vehicleDescription: z.string().trim().max(200).optional(),
+  driverLicenseNo: z.string().trim().max(50).optional(),
+  driverAvailable: z.enum(["true", "false"]).optional(),
+});

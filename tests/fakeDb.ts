@@ -131,6 +131,7 @@ export function createFakeDb() {
   const bookingMessage = new Table();
   const bookingEvent = new Table();
   const notification = new Table();
+  const auditLog = new Table();
 
   session.relations = { user: { type: "belongsTo", fk: "userId", table: () => appUser } };
 
@@ -150,8 +151,9 @@ export function createFakeDb() {
 
   bookingMessage.relations = { sender: { type: "belongsTo", fk: "senderId", table: () => appUser } };
   bookingEvent.relations = { actor: { type: "belongsTo", fk: "actorId", table: () => appUser } };
+  auditLog.relations = { actor: { type: "belongsTo", fk: "actorId", table: () => appUser } };
 
-  const tables = { appUser, session, bookingRequest, bookingAssignment, bookingMessage, bookingEvent, notification };
+  const tables = { appUser, session, bookingRequest, bookingAssignment, bookingMessage, bookingEvent, notification, auditLog };
 
   const fake = {
     ...tables,

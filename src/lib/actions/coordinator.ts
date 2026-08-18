@@ -10,6 +10,9 @@ import {
   updateBookingDetailsSchema,
   assignDriverSchema,
   sendMessageSchema,
+  claimBookingSchema,
+  revokeAssignmentSchema,
+  togglePrioritySchema,
 } from "@/lib/validation/booking";
 import type { ActionResult } from "@/lib/actions/auth";
 import type { BookingStatus } from "@prisma/client";
@@ -24,17 +27,45 @@ const QUEUE_FILTERS: Record<string, BookingStatus[]> = {
   CANCELLED: ["CANCELLED"],
 };
 
-export async function listQueue(queue: keyof typeof QUEUE_FILTERS | "ALL") {
+export async function listQueue(queue: keyof typeof QUEUE_FILTERS | "ALL", search?: string) {
   await requireRole("COORDINATOR", "ADMIN");
-  const where = queue === "ALL" ? {} : { status: { in: QUEUE_FILTERS[queue] } };
+  const where: Record<string, unknown> = queue === "ALL" ? {} : { status: { in: QUEUE_FILTERS[queue] } };
+  if (search && search.trim()) {
+    const term = search.trim();
+    where.OR = [
+      { reference: { contains: term, mode: "insensitive" } },
+      { pickupAddress: { contains: term, mode: "insensitive" } },
+      { dropoffAddress: { contains: term, mode: "insensitive" } },
+      { customer: { name: { contains: term, mode: "insensitive" } } },
+    ];
+  }
   return db.bookingRequest.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     include: {
       customer: { select: { id: true, name: true, email: true, phone: true } },
       assignments: { orderBy: { createdAt: "desc" }, include: { driver: { select: { id: true, name: true } } } },
     },
   });
+}
+
+/** Metrics for the coordinator dashboard cards. */
+export async function getCoordinatorSummary() {
+  await requireRole("COORDINATOR", "ADMIN");
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const [newRequests, awaitingAssignment, driverDeclines, scheduledToday, activeTrips] = await Promise.all([
+    db.bookingRequest.count({ where: { status: "SUBMITTED" } }),
+    db.bookingRequest.count({ where: { status: { in: ["PENDING_ASSIGNMENT", "REASSIGNMENT_REQUIRED"] } } }),
+    db.bookingAssignment.count({ where: { status: "DECLINED" } }),
+    db.bookingRequest.count({ where: { status: "SCHEDULED", travelDate: { gte: startOfToday, lt: endOfToday } } }),
+    db.bookingRequest.count({ where: { status: { in: ["IN_COMMUNICATION", "IN_PROGRESS"] } } }),
+  ]);
+
+  return { newRequests, awaitingAssignment, driverDeclines, scheduledToday, activeTrips };
 }
 
 export async function getBookingDetail(bookingId: string) {
@@ -211,5 +242,97 @@ export async function markScheduled(_prev: ActionResult, formData: FormData): Pr
   }
 
   revalidatePath(`/coordinator/bookings/${bookingId}`);
+  return { ok: true };
+}
+
+/** Coordinator "claims" an unclaimed request as their own — first-touch
+ *  ownership, not a status change, so it doesn't go through transitionBooking. */
+export async function claimBooking(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const user = await requireRole("COORDINATOR", "ADMIN");
+  const parsed = claimBookingSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+
+  const booking = await db.bookingRequest.findUnique({ where: { id: parsed.data.bookingId } });
+  if (!booking) return { ok: false, error: "Booking not found." };
+  if (booking.coordinatorId && booking.coordinatorId !== user.id) {
+    return { ok: false, error: "Already claimed by another coordinator." };
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.bookingRequest.update({ where: { id: booking.id }, data: { coordinatorId: user.id } });
+    await recordEvent(tx, {
+      bookingRequestId: booking.id,
+      actorId: user.id,
+      previousStatus: booking.status,
+      newStatus: booking.status,
+      context: { action: "claimed" },
+    });
+  });
+
+  revalidatePath("/coordinator");
+  return { ok: true };
+}
+
+export async function togglePriority(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const user = await requireRole("COORDINATOR", "ADMIN");
+  const parsed = togglePrioritySchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return { ok: false, error: "Invalid request." };
+  const priority = parsed.data.priority === "true";
+
+  const booking = await db.bookingRequest.findUnique({ where: { id: parsed.data.bookingId } });
+  if (!booking) return { ok: false, error: "Booking not found." };
+
+  await db.$transaction(async (tx) => {
+    await tx.bookingRequest.update({ where: { id: booking.id }, data: { priority } });
+    await recordEvent(tx, {
+      bookingRequestId: booking.id,
+      actorId: user.id,
+      previousStatus: booking.status,
+      newStatus: booking.status,
+      context: { action: priority ? "marked_priority" : "unmarked_priority" },
+    });
+  });
+
+  revalidatePath("/coordinator");
+  return { ok: true };
+}
+
+/** Withdraws an offer the driver hasn't responded to yet — e.g. the
+ *  coordinator found a better-suited driver before the original replied. */
+export async function revokeAssignment(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const user = await requireRole("COORDINATOR", "ADMIN");
+  const parsed = revokeAssignmentSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return { ok: false, error: "A reason is required to revoke an offer." };
+
+  const assignment = await db.bookingAssignment.findUnique({ where: { id: parsed.data.assignmentId } });
+  if (!assignment) return { ok: false, error: "Assignment not found." };
+  if (assignment.status !== "OFFERED") {
+    return { ok: false, error: "Only a pending (unaccepted) offer can be revoked." };
+  }
+  const booking = await db.bookingRequest.findUnique({ where: { id: assignment.bookingRequestId } });
+  if (!booking) return { ok: false, error: "Booking not found." };
+
+  await db.$transaction(async (tx) => {
+    await tx.bookingAssignment.update({
+      where: { id: assignment.id },
+      data: { status: "REVOKED", respondedAt: new Date() },
+    });
+    await recordEvent(tx, {
+      bookingRequestId: assignment.bookingRequestId,
+      actorId: user.id,
+      previousStatus: booking.status,
+      newStatus: booking.status,
+      context: { action: "assignment_revoked", assignmentId: assignment.id, reason: parsed.data.reason },
+    });
+    await notify(tx, {
+      userId: assignment.driverId,
+      type: "ASSIGNMENT_REVOKED",
+      title: "Trip offer withdrawn",
+      body: "A coordinator withdrew a trip offer before you responded.",
+      link: "/driver",
+    });
+  });
+
+  revalidatePath(`/coordinator/bookings/${assignment.bookingRequestId}`);
   return { ok: true };
 }

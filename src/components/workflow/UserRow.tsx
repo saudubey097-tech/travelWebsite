@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { setUserActive, changeUserRole } from "@/lib/actions/admin";
 import { Badge } from "@/components/ui/Badge";
 import type { Role } from "@prisma/client";
@@ -18,7 +19,11 @@ export function UserRow({ user, isSelf }: { user: StaffUserRow; isSelf: boolean 
 
   return (
     <tr className="border-b border-line/70">
-      <td className="py-3 pr-4 font-body text-sm text-ink">{user.name}</td>
+      <td className="py-3 pr-4 font-body text-sm text-ink">
+        <Link href={`/admin/users/${user.id}`} className="hover:text-pine hover:underline">
+          {user.name}
+        </Link>
+      </td>
       <td className="py-3 pr-4 font-body text-sm text-ink/65">{user.email}</td>
       <td className="py-3 pr-4">
         {isSelf ? (

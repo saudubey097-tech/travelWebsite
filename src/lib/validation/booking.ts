@@ -38,10 +38,9 @@ export const assignDriverSchema = z.object({
 export const respondToAssignmentSchema = z.object({
   assignmentId: z.string().min(1).max(64),
   decision: z.enum(["ACCEPT", "DECLINE"]),
-  declineReason: z.string().trim().min(3).max(500).optional(),
-}).refine((v) => v.decision === "ACCEPT" || Boolean(v.declineReason), {
-  message: "A reason is required to decline an assignment.",
-  path: ["declineReason"],
+  // Decline reason is optional per product spec — a driver isn't blocked
+  // from declining just because they didn't type a reason.
+  declineReason: z.string().trim().max(500).optional(),
 });
 
 export const updateTripStatusSchema = z.object({
@@ -57,10 +56,51 @@ export const sendMessageSchema = z.object({
 
 export const cancelBookingSchema = z.object({
   bookingId: z.string().min(1).max(64),
+  reason: z.string().trim().max(500).optional(),
 });
 
 export const overrideAssignmentSchema = z.object({
   bookingId: z.string().min(1).max(64),
   driverId: z.string().min(1).max(64),
   reason: z.string().trim().min(3).max(500),
+});
+
+export const claimBookingSchema = z.object({
+  bookingId: z.string().min(1).max(64),
+});
+
+export const revokeAssignmentSchema = z.object({
+  assignmentId: z.string().min(1).max(64),
+  reason: z.string().trim().min(3).max(500),
+});
+
+export const togglePrioritySchema = z.object({
+  bookingId: z.string().min(1).max(64),
+  priority: z.enum(["true", "false"]),
+});
+
+export const correctBookingStatusSchema = z.object({
+  bookingId: z.string().min(1).max(64),
+  newStatus: z.enum([
+    "SUBMITTED",
+    "PENDING_ASSIGNMENT",
+    "ACCEPTED",
+    "DECLINED",
+    "REASSIGNMENT_REQUIRED",
+    "IN_COMMUNICATION",
+    "SCHEDULED",
+    "IN_PROGRESS",
+    "COMPLETED",
+    "CANCELLED",
+  ]),
+  reason: z.string().trim().min(3).max(500),
+});
+
+export const addNoteSchema = z.object({
+  bookingId: z.string().min(1).max(64),
+  body: z.string().trim().min(1).max(2000),
+});
+
+export const resendNotificationSchema = z.object({
+  notificationId: z.string().min(1).max(64),
 });

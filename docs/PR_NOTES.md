@@ -2,6 +2,10 @@
 
 These notes are written to be pasted into the draft PR description (I don't
 have GitHub access from this environment — see "What I couldn't do" below).
+This document covers two rounds of work: the initial workflow build, and a
+follow-up pass that added coordinator claim/priority/revoke, admin overrides
+and alerts, the `/admin/users/[id]` page, search/pagination throughout, and
+a wider automated-test surface.
 
 ## Summary
 
@@ -121,6 +125,53 @@ both explicitly.
 Postgres instance — a Neon branch works well for this — to exercise genuine
 `$transaction` isolation under concurrent load, which the in-memory fake
 can't reproduce.
+
+## Second round — operational depth
+
+- **Schema addition:** `booking_requests.priority` (boolean) for the
+  coordinator's urgency flag, and the `audit_logs` table described above
+  for account-level changes.
+- **Coordinator:** claim/self-assign, priority flag, revoke an unaccepted
+  offer (with mandatory reason), search across reference/customer/route,
+  a fuller metrics strip.
+- **Admin:** `/admin` now shows completion rate, driver acceptance rate,
+  reassignment count, and an alerts panel (unassigned >24h, offers a driver
+  hasn't responded to in >24h, bookings stuck in `REASSIGNMENT_REQUIRED`).
+  `/admin/bookings` gained search + real pagination. `/admin/bookings/[id]`
+  gained a status-correction override (bypasses the normal transition
+  guard, always requires a reason, always logged as `override: true` in
+  the event context so it's never confused with a routine transition),
+  private admin notes, and a "resend notification" action (re-delivers as
+  a fresh in-app notification — see limitation below). New
+  `/admin/users/[id]` page with driver profile editing and per-account
+  audit history.
+- **Last-active-admin protection:** deactivating or role-changing the only
+  active admin is refused server-side, not just hidden in the UI.
+- **Decline reason changed from required to optional**, per this round's
+  explicit spec wording (the first round had required it).
+- **Shared components added:** `EmptyState`, `ErrorState`, `ConfirmDialog`
+  (inline confirm-with-optional-or-required-reason, used for cancel/
+  decline/revoke/override), `Pagination`, `SearchFilterToolbar`,
+  `AssignmentHistory`, plus a shared NZ date-formatting util.
+- **Tests:** added `tests/reassignment-and-cancellation.test.ts` (decline →
+  `REASSIGNMENT_REQUIRED` → reassign → second driver accepts, plus
+  cancel-with-reason and the in-progress-can't-cancel guard) and
+  `tests/admin-overrides.test.ts` (last-active-admin protection,
+  status-correction override auditing, and that a customer can't reach it).
+  24 tests across 10 files, all passing.
+- **`e2e/full-workflow.spec.ts`** — a real Playwright spec covering
+  Customer request → Coordinator assignment → Driver accept → Messaging →
+  Driver completes → Admin audit review, using the seeded demo accounts.
+  **Not executed here** (no browser binaries, no live server/database in
+  this sandbox) — see `e2e/README.md` for how to run it once you have both.
+
+**Known limitation (resend notifications):** `resendNotification` creates a
+fresh in-app notification row for the same recipient; it does not re-send
+an external email. Notifications are correlated to a booking by searching
+for the booking id inside each notification's `link` field, since
+`notifications` is user-scoped rather than booking-scoped in the schema —
+a pragmatic choice to avoid adding a stricter relation for a minor feature,
+but worth tightening if resend becomes a heavily-used action.
 
 ## What I couldn't do from this environment
 

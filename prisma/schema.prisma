@@ -16,10 +16,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // The deployed application uses Neon's pooled connection string. Database
-  // migrations are applied through the controlled Neon migration workflow,
-  // so the app does not require a second direct connection secret at runtime.
+  provider = "postgresql"
   url = env("DATABASE_URL")
 }
 
@@ -112,6 +109,8 @@ model AppUser {
   messagesSent       BookingMessage[]
   events             BookingEvent[]
   notifications      Notification[]
+  auditLogsAsActor   AuditLog[]        @relation("AuditActor")
+  auditLogsAsTarget  AuditLog[]        @relation("AuditTarget")
 
   @@map("app_users")
   @@index([role])
@@ -161,6 +160,8 @@ model BookingRequest {
   currency            String  @default("NZD")
 
   cancelledAt DateTime? @map("cancelled_at")
+  // Coordinator-set urgency flag surfaced in the queue view.
+  priority    Boolean   @default(false)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -236,6 +237,29 @@ model BookingEvent {
 
   @@map("booking_events")
   @@index([bookingRequestId, createdAt])
+}
+
+// Account-level audit trail (role changes, activate/deactivate) — separate
+// from booking_events because those are scoped to a booking_request_id and
+// user-account changes aren't tied to any single booking. Added beyond the
+// original six tables specifically to satisfy "audit all role and
+// active-status changes" for /admin/users.
+model AuditLog {
+  id             String  @id @default(cuid())
+  actorId        String  @map("actor_id")
+  targetUserId   String  @map("target_user_id")
+  action         String
+  previousValue  String? @map("previous_value")
+  newValue       String? @map("new_value")
+  reason         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor      AppUser @relation("AuditActor", fields: [actorId], references: [id])
+  targetUser AppUser @relation("AuditTarget", fields: [targetUserId], references: [id])
+
+  @@map("audit_logs")
+  @@index([targetUserId, createdAt])
 }
 
 model Notification {
