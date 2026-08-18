@@ -8,7 +8,12 @@ import { ConversationPanel } from "@/components/workflow/ConversationPanel";
 import { BookingDetailsForm } from "@/components/workflow/BookingDetailsForm";
 import { AssignDriverForm } from "@/components/workflow/AssignDriverForm";
 import { MarkScheduledButton } from "@/components/workflow/MarkScheduledButton";
+import { ClaimBookingButton } from "@/components/workflow/ClaimBookingButton";
+import { PriorityToggle } from "@/components/workflow/PriorityToggle";
+import { RevokeAssignmentButton } from "@/components/workflow/RevokeAssignmentButton";
+import { AssignmentHistory } from "@/components/workflow/AssignmentHistory";
 import { Card } from "@/components/ui/Card";
+import { formatNZDate } from "@/lib/format";
 
 const ASSIGNABLE = ["PENDING_ASSIGNMENT", "REASSIGNMENT_REQUIRED"];
 
@@ -19,6 +24,7 @@ export default async function CoordinatorBookingDetailPage({ params }: { params:
 
   const eligibleDrivers = ASSIGNABLE.includes(booking.status) ? await listEligibleDrivers() : [];
   const canSchedule = ["ACCEPTED", "IN_COMMUNICATION"].includes(booking.status);
+  const openOffer = booking.assignments.find((a) => a.status === "OFFERED");
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -28,8 +34,20 @@ export default async function CoordinatorBookingDetailPage({ params }: { params:
             <span className="font-mono text-xs uppercase tracking-wide text-ink/40">{booking.reference}</span>
             <h2 className="mt-1 font-display text-2xl text-ink">{booking.customer.name}</h2>
           </div>
-          <StatusBadge status={booking.status} />
+          <div className="flex items-center gap-2">
+            <PriorityToggle bookingId={booking.id} priority={booking.priority} />
+            <StatusBadge status={booking.status} />
+          </div>
         </div>
+
+        {!booking.coordinatorId ? (
+          <div className="flex items-center justify-between rounded-md border border-gold/30 bg-gold/10 px-4 py-3">
+            <span className="font-body text-sm text-ink/75">Unclaimed request.</span>
+            <ClaimBookingButton bookingId={booking.id} />
+          </div>
+        ) : booking.coordinator && booking.coordinator.id !== user.id ? (
+          <p className="font-body text-xs text-ink/45">Handled by {booking.coordinator.name}.</p>
+        ) : null}
 
         <Card className="p-5">
           <span className="font-mono text-[11px] uppercase tracking-wide text-ink/45">Customer</span>
@@ -71,20 +89,11 @@ export default async function CoordinatorBookingDetailPage({ params }: { params:
 
         {booking.assignments.length > 0 && (
           <Card className="p-5">
-            <span className="mb-3 block font-mono text-[11px] uppercase tracking-wide text-ink/45">
-              Assignment history
-            </span>
-            <ul className="space-y-2">
-              {booking.assignments.map((a) => (
-                <li key={a.id} className="flex items-center justify-between font-body text-sm">
-                  <span className="text-ink/80">{a.driver.name}</span>
-                  <span className="font-mono text-[11px] uppercase text-ink/45">
-                    {a.status}
-                    {a.declineReason ? ` — ${a.declineReason}` : ""}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-mono text-[11px] uppercase tracking-wide text-ink/45">Assignment history</span>
+              {openOffer && <RevokeAssignmentButton assignmentId={openOffer.id} />}
+            </div>
+            <AssignmentHistory assignments={booking.assignments} />
           </Card>
         )}
 
@@ -110,7 +119,7 @@ export default async function CoordinatorBookingDetailPage({ params }: { params:
           <span className="font-mono text-[11px] uppercase tracking-wide text-ink/45">Quick facts</span>
           <div className="mt-2 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gold" aria-hidden />
-            {new Date(booking.travelDate).toLocaleDateString("en-NZ", { dateStyle: "medium", timeZone: "Pacific/Auckland" })}
+            {formatNZDate(booking.travelDate)}
           </div>
           <div className="mt-1.5 flex items-center gap-2">
             <Users className="h-4 w-4 text-gold" aria-hidden />
