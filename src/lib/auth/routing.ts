@@ -22,4 +22,5 @@ export const PROTECTED_PREFIXES: { prefix: string; roles: Role[] }[] = [
   { prefix: "/coordinator", roles: ["COORDINATOR", "ADMIN"] },
   { prefix: "/driver", roles: ["DRIVER", "ADMIN"] },
   { prefix: "/admin", roles: ["ADMIN"] },
+  { prefix: "/account", roles: ["CUSTOMER", "COORDINATOR", "DRIVER", "ADMIN"] },
 ];

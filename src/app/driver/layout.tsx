@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { requireRole } from "@/lib/auth/session";
 import { listMyNotifications } from "@/lib/actions/notifications";
 import { NotificationBell } from "@/components/workflow/NotificationBell";
@@ -7,6 +8,7 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("DRIVER", "ADMIN").catch(() => null);
   if (!user) redirect("/login?next=/driver");
+  if (user.mustChangePassword) redirect("/account/change-password");
   const notifications = await listMyNotifications();
 
   return (
@@ -18,6 +20,9 @@ export default async function DriverLayout({ children }: { children: React.React
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell initial={notifications} />
+          <Link href="/account/security" className="font-body text-sm text-ink/60 hover:text-ink">
+            Security
+          </Link>
           <SignOutButton />
         </div>
       </div>

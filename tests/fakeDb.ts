@@ -15,11 +15,21 @@ function matches(row: Row, where?: Where): boolean {
   return Object.entries(where).every(([key, cond]) => {
     if (cond === undefined) return true;
     const value = row[key];
+    // Prisma treats an unset nullable column as NULL; this fake's create()
+    // only stores the keys it was given, so a row that never had `key` set
+    // has `value === undefined` where real Postgres would have NULL. Treat
+    // them as equivalent so `where: { consumedAt: null }` correctly matches
+    // rows that simply never set consumedAt.
+    if (cond === null) return value === null || value === undefined;
     if (cond && typeof cond === "object" && !Array.isArray(cond)) {
       const c = cond as Record<string, unknown>;
       if ("in" in c) return (c.in as unknown[]).includes(value);
       if ("gte" in c && value !== undefined && (value as Date) < (c.gte as Date)) return false;
       if ("lte" in c && value !== undefined && (value as Date) > (c.lte as Date)) return false;
+      if ("gt" in c && value !== undefined && !((value as Date) > (c.gt as Date))) return false;
+      if ("lt" in c && value !== undefined && !((value as Date) < (c.lt as Date))) return false;
+      if ("not" in c) return value !== c.not;
+      if ("contains" in c) return typeof value === "string" && value.toLowerCase().includes(String(c.contains).toLowerCase());
       return true;
     }
     return value === cond;
@@ -132,6 +142,11 @@ export function createFakeDb() {
   const bookingEvent = new Table();
   const notification = new Table();
   const auditLog = new Table();
+  const emailVerificationToken = new Table();
+  const passwordResetToken = new Table();
+  const staffInvitationToken = new Table();
+  const recoveryCode = new Table();
+  const securityEvent = new Table();
 
   session.relations = { user: { type: "belongsTo", fk: "userId", table: () => appUser } };
 
@@ -153,7 +168,21 @@ export function createFakeDb() {
   bookingEvent.relations = { actor: { type: "belongsTo", fk: "actorId", table: () => appUser } };
   auditLog.relations = { actor: { type: "belongsTo", fk: "actorId", table: () => appUser } };
 
-  const tables = { appUser, session, bookingRequest, bookingAssignment, bookingMessage, bookingEvent, notification, auditLog };
+  const tables = {
+    appUser,
+    session,
+    bookingRequest,
+    bookingAssignment,
+    bookingMessage,
+    bookingEvent,
+    notification,
+    auditLog,
+    emailVerificationToken,
+    passwordResetToken,
+    staffInvitationToken,
+    recoveryCode,
+    securityEvent,
+  };
 
   const fake = {
     ...tables,
