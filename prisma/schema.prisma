@@ -335,6 +335,7 @@ model BookingEvent {
   id               String  @id @default(cuid())
   bookingRequestId String  @map("booking_request_id")
   actorId          String? @map("actor_id")
+  eventType        String  @map("event_type")
 
   previousStatus BookingStatus? @map("previous_status")
   newStatus      BookingStatus  @map("new_status")
