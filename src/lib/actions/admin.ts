@@ -178,6 +178,7 @@ export async function overrideAssignment(_prev: ActionResult, formData: FormData
         data: {
           bookingRequestId: bookingId,
           actorId: admin.id,
+          eventType: "ASSIGNMENT_OVERRIDDEN",
           previousStatus: booking.status,
           newStatus: booking.status,
           context: { override: true, reason, driverId },
@@ -337,6 +338,7 @@ export async function correctBookingStatus(_prev: ActionResult, formData: FormDa
       data: {
         bookingRequestId: booking.id,
         actorId: admin.id,
+        eventType: "STATUS_CORRECTED",
         previousStatus: booking.status,
         newStatus: parsed.data.newStatus,
         context: { override: true, action: "status_corrected", reason: parsed.data.reason },
