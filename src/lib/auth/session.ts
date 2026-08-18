@@ -7,6 +7,10 @@ import { SESSION_COOKIE } from "@/lib/auth/constants";
 
 export { SESSION_COOKIE };
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
+// A session is treated as "active for list purposes" if used in the last
+// 5 minutes; requests older than that still work, this is just a display
+// threshold, so the write only happens when it's actually stale.
+const ACTIVITY_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 
 /** Only the fields safe to hold in memory/pass to client components. */
 export interface SafeUser {
@@ -15,10 +19,25 @@ export interface SafeUser {
   name: string;
   role: Role;
   active: boolean;
+  emailVerifiedAt: Date | null;
+  mustChangePassword: boolean;
+  mfaEnabled: boolean;
+  /** The current session's row id — lets the security page mark "this device". */
+  sessionId: string;
 }
 
-function toSafeUser(user: AppUser): SafeUser {
-  return { id: user.id, email: user.email, name: user.name, role: user.role, active: user.active };
+function toSafeUser(user: AppUser, sessionId: string): SafeUser {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    active: user.active,
+    emailVerifiedAt: user.emailVerifiedAt,
+    mustChangePassword: user.mustChangePassword,
+    mfaEnabled: user.mfaEnabled,
+    sessionId,
+  };
 }
 
 function hashToken(token: string): string {
@@ -27,17 +46,25 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+function clientIp(h: Headers): string | undefined {
+  const forwarded = h.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0]?.trim();
+  return h.get("x-real-ip") ?? undefined;
+}
+
 /**
  * Creates a new DB-backed session for the user and sets the session cookie.
- * Called after successful sign-up/sign-in.
+ * Called after successful sign-up/sign-in (or MFA challenge completion).
  */
 export async function createSession(userId: string): Promise<void> {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  const userAgent = (await headers()).get("user-agent")?.slice(0, 255);
+  const h = await headers();
+  const userAgent = h.get("user-agent")?.slice(0, 255);
+  const ipAddress = clientIp(h);
 
-  await db.session.create({ data: { userId, tokenHash, expiresAt, userAgent } });
+  await db.session.create({ data: { userId, tokenHash, expiresAt, userAgent, ipAddress } });
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
@@ -61,11 +88,16 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
     include: { user: true },
   });
 
-  if (!session || session.expiresAt < new Date() || !session.user.active) {
+  if (!session || session.revokedAt || session.expiresAt < new Date() || !session.user.active) {
     return null;
   }
 
-  return toSafeUser(session.user);
+  if (Date.now() - session.lastActiveAt.getTime() > ACTIVITY_TOUCH_INTERVAL_MS) {
+    // Best-effort — don't fail the request if this write races/errors.
+    db.session.update({ where: { id: session.id }, data: { lastActiveAt: new Date() } }).catch(() => null);
+  }
+
+  return toSafeUser(session.user, session.id);
 }
 
 /** Throws-free guard for use at the top of Server Actions and route handlers. */
@@ -89,7 +121,7 @@ export async function destroySession(): Promise<void> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (token) {
     const tokenHash = hashToken(token);
-    await db.session.deleteMany({ where: { tokenHash } });
+    await db.session.updateMany({ where: { tokenHash }, data: { revokedAt: new Date() } });
   }
   cookieStore.delete(SESSION_COOKIE);
 }
