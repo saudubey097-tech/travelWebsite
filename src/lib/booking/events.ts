@@ -11,6 +11,7 @@ export async function recordEvent(
   params: {
     bookingRequestId: string;
     actorId: string | null;
+    eventType?: string;
     previousStatus: BookingStatus | null;
     newStatus: BookingStatus;
     context?: Record<string, unknown>;
@@ -20,6 +21,7 @@ export async function recordEvent(
     data: {
       bookingRequestId: params.bookingRequestId,
       actorId: params.actorId,
+      eventType: params.eventType ?? "STATUS_CHANGED",
       previousStatus: params.previousStatus,
       newStatus: params.newStatus,
       context: params.context as Prisma.InputJsonValue | undefined,
