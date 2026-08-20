@@ -16,6 +16,7 @@ import {
 } from "@/lib/validation/booking";
 import type { ActionResult } from "@/lib/actions/auth";
 import type { BookingStatus } from "@prisma/client";
+import { AlreadyClaimedByCoordinatorError } from "@/lib/booking/errors";
 
 const QUEUE_FILTERS: Record<string, BookingStatus[]> = {
   NEW: ["SUBMITTED"],
@@ -124,6 +125,7 @@ export async function updateBookingDetails(_prev: ActionResult, formData: FormDa
         currentStatus: "SUBMITTED",
         newStatus: "PENDING_ASSIGNMENT",
         actorId: user.id,
+        eventType: "BOOKING_REVIEWED",
         context: { reason: "coordinator_reviewed" },
       });
       await notify(tx, {
@@ -165,6 +167,7 @@ export async function assignDriver(_prev: ActionResult, formData: FormData): Pro
     await recordEvent(tx, {
       bookingRequestId: bookingId,
       actorId: user.id,
+      eventType: "DRIVER_ASSIGNED",
       previousStatus: booking.status,
       newStatus: booking.status,
       context: { action: "assignment_offered", driverId },
@@ -228,6 +231,7 @@ export async function markScheduled(_prev: ActionResult, formData: FormData): Pr
         currentStatus: booking.status,
         newStatus: "SCHEDULED",
         actorId: user.id,
+        eventType: "TRIP_SCHEDULED",
       });
       await notify(tx, {
         userId: booking.customerId,
@@ -246,7 +250,10 @@ export async function markScheduled(_prev: ActionResult, formData: FormData): Pr
 }
 
 /** Coordinator "claims" an unclaimed request as their own — first-touch
- *  ownership, not a status change, so it doesn't go through transitionBooking. */
+ *  ownership, not a status change, so it doesn't go through transitionBooking.
+ *  Atomic: the conditional UPDATE (WHERE coordinatorId IS NULL) is the real
+ *  lock, so two coordinators claiming the same booking at once can't both
+ *  succeed — only the first UPDATE that actually matches a row wins. */
 export async function claimBooking(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const user = await requireRole("COORDINATOR", "ADMIN");
   const parsed = claimBookingSchema.safeParse(Object.fromEntries(formData.entries()));
@@ -254,20 +261,41 @@ export async function claimBooking(_prev: ActionResult, formData: FormData): Pro
 
   const booking = await db.bookingRequest.findUnique({ where: { id: parsed.data.bookingId } });
   if (!booking) return { ok: false, error: "Booking not found." };
-  if (booking.coordinatorId && booking.coordinatorId !== user.id) {
-    return { ok: false, error: "Already claimed by another coordinator." };
-  }
+  if (booking.coordinatorId === user.id) return { ok: true }; // already yours — idempotent
 
-  await db.$transaction(async (tx) => {
-    await tx.bookingRequest.update({ where: { id: booking.id }, data: { coordinatorId: user.id } });
-    await recordEvent(tx, {
-      bookingRequestId: booking.id,
-      actorId: user.id,
-      previousStatus: booking.status,
-      newStatus: booking.status,
-      context: { action: "claimed" },
+  try {
+    await db.$transaction(async (tx) => {
+      const claimed = await tx.bookingRequest.updateMany({
+        where: { id: booking.id, coordinatorId: null },
+        data: { coordinatorId: user.id },
+      });
+      if (claimed.count === 0) {
+        throw new AlreadyClaimedByCoordinatorError();
+      }
+      await recordEvent(tx, {
+        bookingRequestId: booking.id,
+        actorId: user.id,
+        eventType: "BOOKING_CLAIMED",
+        previousStatus: booking.status,
+        newStatus: booking.status,
+        context: { action: "claimed" },
+      });
+      if (booking.status === "SUBMITTED" || booking.status === "PENDING_ASSIGNMENT") {
+        await notify(tx, {
+          userId: booking.customerId,
+          type: "STATUS_UPDATE",
+          title: "Your request is being handled",
+          body: `${user.name} is now looking after your booking.`,
+          link: `/dashboard/bookings/${booking.id}`,
+        });
+      }
     });
-  });
+  } catch (err) {
+    if (err instanceof AlreadyClaimedByCoordinatorError) {
+      return { ok: false, error: "Already claimed by another coordinator." };
+    }
+    return { ok: false, error: "Something went wrong claiming this booking." };
+  }
 
   revalidatePath("/coordinator");
   return { ok: true };
@@ -287,6 +315,7 @@ export async function togglePriority(_prev: ActionResult, formData: FormData): P
     await recordEvent(tx, {
       bookingRequestId: booking.id,
       actorId: user.id,
+      eventType: priority ? "BOOKING_MARKED_PRIORITY" : "BOOKING_UNMARKED_PRIORITY",
       previousStatus: booking.status,
       newStatus: booking.status,
       context: { action: priority ? "marked_priority" : "unmarked_priority" },
@@ -320,6 +349,7 @@ export async function revokeAssignment(_prev: ActionResult, formData: FormData):
     await recordEvent(tx, {
       bookingRequestId: assignment.bookingRequestId,
       actorId: user.id,
+      eventType: "ASSIGNMENT_REVOKED",
       previousStatus: booking.status,
       newStatus: booking.status,
       context: { action: "assignment_revoked", assignmentId: assignment.id, reason: parsed.data.reason },
