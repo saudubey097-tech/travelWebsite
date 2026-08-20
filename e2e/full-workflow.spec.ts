@@ -22,11 +22,14 @@ test("full booking lifecycle across all four roles", async ({ page }) => {
   await page.goto("/book");
   await page.getByLabel(/travel date/i).fill("2026-12-15");
   await page.getByLabel(/guests/i).fill("2");
+  await page.getByLabel(/^pickup/i).fill("Auckland Airport");
+  await page.getByLabel(/drop-off/i).fill("Sky City");
   await page.getByLabel(/your name/i).fill("E2E Test Customer");
   await page.getByLabel(/^email/i).fill("customer@example.com");
   await page.getByLabel(/phone/i).fill("+64211112222");
   await page.getByRole("button", { name: /send booking request/i }).click();
   await expect(page.getByText(/request sent/i)).toBeVisible();
+  await expect(page.getByText(/status: request received/i)).toBeVisible();
   const referenceText = await page.getByText(/^SB-/).first().textContent();
   const reference = referenceText?.trim();
   expect(reference).toBeTruthy();
@@ -44,8 +47,9 @@ test("full booking lifecycle across all four roles", async ({ page }) => {
   // 3. Driver accepts the offer.
   await signIn(page, "driver@example.com");
   await page.goto("/driver");
+  await page.getByText(reference!).click();
   await page.getByText(/accept trip/i).click();
-  await expect(page.getByText(/driver confirmed/i)).toBeVisible();
+  await expect(page.getByText(/customer contact/i)).toBeVisible();
 
   // 4. Messaging opens now that the driver has accepted.
   await page.getByPlaceholder(/write a message/i).fill("On my way to pick you up!");
@@ -78,4 +82,24 @@ test("full booking lifecycle across all four roles", async ({ page }) => {
   await page.getByText(reference!).click();
   await expect(page.getByText(/audit timeline/i)).toBeVisible();
   await expect(page.getByText(/completed/i).first()).toBeVisible();
+});
+
+test("role-denial: unauthenticated and wrong-role access is blocked", async ({ page }) => {
+  // An unauthenticated visitor hitting a protected route is redirected to sign in.
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/login/);
+
+  // A signed-in driver cannot reach the admin or coordinator workspaces.
+  await signIn(page, "driver@example.com");
+  await page.goto("/admin");
+  await expect(page).not.toHaveURL(/\/admin$/);
+  await page.goto("/coordinator");
+  await expect(page).not.toHaveURL(/\/coordinator$/);
+
+  // A signed-in customer cannot reach the driver or coordinator workspaces.
+  await signIn(page, "customer@example.com");
+  await page.goto("/driver");
+  await expect(page).not.toHaveURL(/\/driver$/);
+  await page.goto("/coordinator");
+  await expect(page).not.toHaveURL(/\/coordinator$/);
 });

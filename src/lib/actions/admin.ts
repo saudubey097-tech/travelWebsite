@@ -171,6 +171,7 @@ export async function overrideAssignment(_prev: ActionResult, formData: FormData
         currentStatus: booking.status,
         newStatus: "ACCEPTED",
         actorId: admin.id,
+        eventType: "ASSIGNMENT_OVERRIDDEN",
         context: { override: true, reason },
       });
     } else {

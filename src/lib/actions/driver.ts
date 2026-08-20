@@ -101,6 +101,7 @@ export async function respondToAssignment(_prev: ActionResult, formData: FormDat
         currentStatus: assignment.bookingRequest.status,
         newStatus: "REASSIGNMENT_REQUIRED",
         actorId: user.id,
+        eventType: "DRIVER_DECLINED",
         context: { assignmentId, declineReason },
       });
       await notify(tx, {
@@ -145,6 +146,7 @@ export async function respondToAssignment(_prev: ActionResult, formData: FormDat
       await recordEvent(tx, {
         bookingRequestId: assignment.bookingRequestId,
         actorId: user.id,
+        eventType: "DRIVER_ACCEPTED_ASSIGNMENT",
         previousStatus: assignment.bookingRequest.status,
         newStatus: "ACCEPTED",
         context: { assignmentId },
@@ -188,6 +190,13 @@ export async function updateTripStatus(_prev: ActionResult, formData: FormData):
   });
   if (!assignment) return { ok: false, error: "You don't have an accepted assignment for this trip." };
 
+  const DRIVER_EVENT_TYPE: Record<string, string> = {
+    IN_COMMUNICATION: "DRIVER_STARTED_COMMUNICATION",
+    SCHEDULED: "TRIP_SCHEDULED_BY_DRIVER",
+    IN_PROGRESS: "TRIP_STARTED",
+    COMPLETED: "TRIP_COMPLETED",
+  };
+
   try {
     await db.$transaction(async (tx) => {
       await transitionBooking(tx, {
@@ -195,6 +204,7 @@ export async function updateTripStatus(_prev: ActionResult, formData: FormData):
         currentStatus: assignment.bookingRequest.status,
         newStatus: status,
         actorId: user.id,
+        eventType: DRIVER_EVENT_TYPE[status],
       });
       await notify(tx, {
         userId: assignment.bookingRequest.customerId,

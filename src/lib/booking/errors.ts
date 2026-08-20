@@ -3,3 +3,6 @@
  *  its own module (not in a "use server" actions file) because Next.js
  *  only allows async function exports from "use server" files. */
 export class AlreadyClaimedError extends Error {}
+
+/** Thrown when two coordinators race to claim the same unclaimed booking. */
+export class AlreadyClaimedByCoordinatorError extends Error {}

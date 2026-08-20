@@ -3,7 +3,7 @@ import { z } from "zod";
 export const serviceTypeSchema = z.enum(["DAY_TOUR", "TRANSFER", "HOURLY", "CUSTOM"]);
 export const vehicleClassSchema = z.enum(["SEDAN", "VAN", "XL_VAN"]);
 
-export const createBookingRequestSchema = z.object({
+const baseBookingFields = {
   serviceType: serviceTypeSchema,
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(254).toLowerCase(),
@@ -16,7 +16,39 @@ export const createBookingRequestSchema = z.object({
   tourSlug: z.string().trim().max(100).optional(),
   notes: z.string().trim().max(2000).optional(),
   quotedPriceCents: z.coerce.number().int().positive().max(10_000_000).optional(),
-});
+};
+
+/**
+ * Per-service-type requirements, enforced server-side (not just via the
+ * form's `required` attributes, which a direct API call can bypass):
+ * a transfer without pickup/dropoff, or a day tour without a tour, is
+ * rejected here rather than silently accepted with missing trip details.
+ */
+export const createBookingRequestSchema = z
+  .object(baseBookingFields)
+  .superRefine((data, ctx) => {
+    if (data.serviceType === "TRANSFER") {
+      if (!data.pickup) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["pickup"], message: "Pickup is required for a transfer." });
+      }
+      if (!data.dropoff) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["dropoff"], message: "Drop-off is required for a transfer." });
+      }
+    }
+    if (data.serviceType === "DAY_TOUR" && !data.tourSlug) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["tourSlug"], message: "Choose which tour you'd like to book." });
+    }
+    if (data.serviceType === "HOURLY" && !data.vehicleClass) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["vehicleClass"], message: "Choose a vehicle size for hourly hire." });
+    }
+    if (data.serviceType === "CUSTOM" && !data.notes) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["notes"],
+        message: "Describe the trip you're after — multi-day and custom requests need some detail to quote.",
+      });
+    }
+  });
 
 export const updateBookingDetailsSchema = z.object({
   bookingId: z.string().min(1).max(64),

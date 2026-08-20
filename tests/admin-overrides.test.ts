@@ -19,7 +19,7 @@ vi.mock("@/lib/auth/session", () => ({
   getCurrentUser: async () => session.current,
 }));
 
-const { setUserActive, correctBookingStatus } = await import("@/lib/actions/admin");
+const { setUserActive, correctBookingStatus, overrideAssignment } = await import("@/lib/actions/admin");
 
 function fd(entries: Record<string, string>) {
   const f = new FormData();
@@ -88,5 +88,51 @@ describe("admin status correction is a bypass, always audited", () => {
     await expect(
       correctBookingStatus({ ok: true }, fd({ bookingId: "any", newStatus: "COMPLETED", reason: "nope" }))
     ).rejects.toThrow(/FORBIDDEN/);
+  });
+});
+
+describe("overrideAssignment requires a mandatory reason", () => {
+  beforeEach(() => {
+    fakeDb.current = createFakeDb();
+    session.current = null;
+  });
+
+  it("rejects an override submitted without a reason", async () => {
+    const db = fakeDb.current!;
+    const admin = await db.appUser.create({ data: { email: "admin2@example.com", name: "Admin", passwordHash: "x", role: "ADMIN" } });
+    const customer = await db.appUser.create({ data: { email: "c2@example.com", name: "Customer", passwordHash: "x", role: "CUSTOMER" } });
+    const driver = await db.appUser.create({ data: { email: "d2@example.com", name: "Driver", passwordHash: "x", role: "DRIVER" } });
+    const booking = await db.bookingRequest.create({
+      data: { reference: "SB-31", customerId: customer.id, serviceType: "TRANSFER", status: "PENDING_ASSIGNMENT", travelDate: new Date(), paxCount: 1 },
+    });
+
+    session.current = makeUser({ id: admin.id as string, role: "ADMIN" });
+    const result = await overrideAssignment({ ok: true }, fd({ bookingId: booking.id as string, driverId: driver.id as string, reason: "" }));
+    expect(result.ok).toBe(false);
+
+    const assignments = await db.bookingAssignment.findMany({ where: { bookingRequestId: booking.id } });
+    expect(assignments).toHaveLength(0);
+  });
+
+  it("accepts an override with a reason and records it as an audited event", async () => {
+    const db = fakeDb.current!;
+    const admin = await db.appUser.create({ data: { email: "admin3@example.com", name: "Admin", passwordHash: "x", role: "ADMIN" } });
+    const customer = await db.appUser.create({ data: { email: "c3@example.com", name: "Customer", passwordHash: "x", role: "CUSTOMER" } });
+    const driver = await db.appUser.create({ data: { email: "d3@example.com", name: "Driver", passwordHash: "x", role: "DRIVER" } });
+    const booking = await db.bookingRequest.create({
+      data: { reference: "SB-32", customerId: customer.id, serviceType: "TRANSFER", status: "PENDING_ASSIGNMENT", travelDate: new Date(), paxCount: 1 },
+    });
+
+    session.current = makeUser({ id: admin.id as string, role: "ADMIN" });
+    const result = await overrideAssignment(
+      { ok: true },
+      fd({ bookingId: booking.id as string, driverId: driver.id as string, reason: "Coordinator unavailable, driver confirmed by phone" })
+    );
+    expect(result.ok).toBe(true);
+
+    const events = await db.bookingEvent.findMany({ where: { bookingRequestId: booking.id } });
+    const overrideEvent = events.find((e) => (e.context as Record<string, unknown>)?.override === true);
+    expect(overrideEvent).toBeDefined();
+    expect((overrideEvent?.context as Record<string, unknown>)?.reason).toBe("Coordinator unavailable, driver confirmed by phone");
   });
 });

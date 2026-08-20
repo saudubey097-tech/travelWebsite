@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -18,6 +19,10 @@ const TYPE_LABEL: Record<BookingType, string> = {
   HOURLY: "Hourly hire",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  SUBMITTED: "Request received",
+};
+
 function isVehicleClass(v: string | null): v is VehicleClass {
   return v === "sedan" || v === "van" || v === "xlVan";
 }
@@ -28,16 +33,29 @@ function humanizeSlug(slug: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export function BookingForm() {
+interface BookingFormProps {
+  tours?: { slug: string; title: string }[];
+  /** Present when the visitor is signed in — their account identity is
+   *  used for the booking regardless of what (if anything) is shown here. */
+  prefill?: { name: string; email: string };
+}
+
+export function BookingForm({ tours = [], prefill }: BookingFormProps) {
   const search = useSearchParams();
-  const [status, setStatus] = useState<{ kind: "idle" | "success" | "error"; message?: string; reference?: string }>({
-    kind: "idle",
-  });
+  const [status, setStatus] = useState<{
+    kind: "idle" | "success" | "error";
+    message?: string;
+    reference?: string;
+    bookingStatus?: string;
+    bookingId?: string;
+  }>({ kind: "idle" });
   const initialType = (search.get("type") as BookingType | null) ?? "TRANSFER";
-  const pickup = search.get("pickup");
-  const dropoff = search.get("dropoff");
-  const vehicle = search.get("vehicle");
-  const tour = search.get("tour");
+  const [serviceType, setServiceType] = useState<BookingType>(initialType);
+  const [pickup, setPickup] = useState(search.get("pickup") ?? "");
+  const [dropoff, setDropoff] = useState(search.get("dropoff") ?? "");
+  const [tour, setTour] = useState(search.get("tour") ?? "");
+  const vehicleParam = search.get("vehicle");
+  const [vehicle, setVehicle] = useState(isVehicleClass(vehicleParam) ? vehicleParam : "");
   const quotedPrice = search.get("quotedPrice");
 
   const hasTripSummary = Boolean(pickup || dropoff || vehicle || tour || quotedPrice);
@@ -57,7 +75,13 @@ export function BookingForm() {
       setStatus({ kind: "error", message: result.error ?? "Something went wrong. Please try again." });
       return;
     }
-    setStatus({ kind: "success", message: "We will reply shortly with availability and a confirmed price.", reference: result.reference });
+    setStatus({
+      kind: "success",
+      message: "We will reply shortly with availability and a confirmed price.",
+      reference: result.reference,
+      bookingStatus: result.status,
+      bookingId: result.bookingId,
+    });
     event.currentTarget.reset();
   }
 
@@ -78,7 +102,23 @@ export function BookingForm() {
             Reference <span className="text-pine">{status.reference}</span>
           </p>
         )}
+        {status.bookingStatus && (
+          <p className="mt-1 font-mono text-xs uppercase tracking-wide text-goldDeep">
+            Status: {STATUS_LABEL[status.bookingStatus] ?? status.bookingStatus}
+          </p>
+        )}
         <p className="mx-auto mt-3 max-w-sm font-body text-sm leading-relaxed text-ink/65">{status.message}</p>
+        <p className="mx-auto mt-2 max-w-sm font-body text-sm text-ink/65">
+          <strong>Next:</strong> a coordinator will review your request and confirm your price and driver.
+        </p>
+        {prefill && status.bookingId && (
+          <Link
+            href={`/dashboard/bookings/${status.bookingId}`}
+            className="mt-4 inline-block font-body text-sm text-pine underline"
+          >
+            Track this request in your dashboard
+          </Link>
+        )}
         <p className="mx-auto mt-6 flex max-w-sm items-center justify-center gap-1.5 font-body text-xs text-ink/45">
           <ShieldCheck className="h-3.5 w-3.5 text-gold" aria-hidden />
           This is a confirmed request, not a paid booking — no payment has been taken.
@@ -111,24 +151,6 @@ export function BookingForm() {
                 <dd>{humanizeSlug(tour)}</dd>
               </div>
             )}
-            {pickup && (
-              <div className="flex gap-2">
-                <dt className="text-ink/45">Pickup</dt>
-                <dd>{pickup}</dd>
-              </div>
-            )}
-            {dropoff && (
-              <div className="flex gap-2">
-                <dt className="text-ink/45">Drop-off</dt>
-                <dd>{dropoff}</dd>
-              </div>
-            )}
-            {isVehicleClass(vehicle) && (
-              <div className="flex gap-2">
-                <dt className="text-ink/45">Vehicle</dt>
-                <dd>{vehicleLabel(vehicle)}</dd>
-              </div>
-            )}
             {quotedPrice && !Number.isNaN(Number(quotedPrice)) && (
               <div className="flex gap-2">
                 <dt className="text-ink/45">Indicative price</dt>
@@ -141,17 +163,27 @@ export function BookingForm() {
 
       <Card className="p-6 sm:p-8">
         <form onSubmit={submit} className="grid gap-6">
-          <input type="hidden" name="bookingType" value={initialType} />
-          <input type="hidden" name="pickup" value={pickup ?? ""} />
-          <input type="hidden" name="dropoff" value={dropoff ?? ""} />
-          <input type="hidden" name="vehicle" value={vehicle ?? ""} />
-          <input type="hidden" name="tour" value={tour ?? ""} />
+          <input type="hidden" name="bookingType" value={serviceType} />
           <input type="hidden" name="quotedPrice" value={quotedPrice ?? ""} />
+          {prefill && <input type="hidden" name="name" value={prefill.name} />}
+          {prefill && <input type="hidden" name="email" value={prefill.email} />}
 
           <fieldset className="grid gap-5 sm:grid-cols-2">
             <legend className="mb-1 font-mono text-[11px] uppercase tracking-wide text-ink/45 sm:col-span-2">
               Trip
             </legend>
+            <label className="flex flex-col gap-1.5">
+              <span className="font-mono text-xs uppercase text-ink/50">Service</span>
+              <select
+                value={serviceType}
+                onChange={(e) => setServiceType(e.target.value as BookingType)}
+                className="input"
+              >
+                <option value="TRANSFER">Transfer</option>
+                <option value="DAY_TOUR">Day tour</option>
+                <option value="HOURLY">Hourly hire</option>
+              </select>
+            </label>
             <label className="flex flex-col gap-1.5">
               <span className="font-mono text-xs uppercase text-ink/50">Travel date</span>
               <input required min={today} name="travelDate" type="date" className="input" />
@@ -160,14 +192,89 @@ export function BookingForm() {
               <span className="font-mono text-xs uppercase text-ink/50">Guests</span>
               <input required defaultValue="2" min="1" max="11" name="guests" type="number" className="input" />
             </label>
+
+            {serviceType === "TRANSFER" && (
+              <>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mono text-xs uppercase text-ink/50">Pickup</span>
+                  <input
+                    required
+                    name="pickup"
+                    value={pickup}
+                    onChange={(e) => setPickup(e.target.value)}
+                    placeholder="Hotel, airport or address"
+                    className="input"
+                  />
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mono text-xs uppercase text-ink/50">Drop-off</span>
+                  <input
+                    required
+                    name="dropoff"
+                    value={dropoff}
+                    onChange={(e) => setDropoff(e.target.value)}
+                    placeholder="Hotel, airport or address"
+                    className="input"
+                  />
+                </label>
+              </>
+            )}
+
+            {serviceType === "DAY_TOUR" && (
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="font-mono text-xs uppercase text-ink/50">Tour</span>
+                <select required name="tour" value={tour} onChange={(e) => setTour(e.target.value)} className="input">
+                  <option value="" disabled>
+                    Choose a tour…
+                  </option>
+                  {tours.map((t) => (
+                    <option key={t.slug} value={t.slug}>
+                      {t.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {serviceType === "HOURLY" && (
+              <label className="flex flex-col gap-1.5">
+                <span className="font-mono text-xs uppercase text-ink/50">Vehicle</span>
+                <select
+                  required
+                  name="vehicle"
+                  value={vehicle}
+                  onChange={(e) => setVehicle(e.target.value)}
+                  className="input"
+                >
+                  <option value="" disabled>
+                    Choose a vehicle…
+                  </option>
+                  <option value="sedan">{vehicleLabel("sedan")}</option>
+                  <option value="van">{vehicleLabel("van")}</option>
+                  <option value="xlVan">{vehicleLabel("xlVan")}</option>
+                </select>
+              </label>
+            )}
           </fieldset>
 
           <fieldset className="grid gap-5 sm:grid-cols-2">
             <legend className="mb-1 font-mono text-[11px] uppercase tracking-wide text-ink/45 sm:col-span-2">
               Your details
             </legend>
-            <Field label="Your name" name="name" required placeholder="Full name" />
-            <Field label="Email" name="email" type="email" required placeholder="you@example.com" />
+            {prefill ? (
+              <div className="sm:col-span-2">
+                <span className="font-mono text-xs uppercase text-ink/50">Booking as</span>
+                <p className="font-body text-sm text-ink/80">
+                  {prefill.name} · {prefill.email}
+                </p>
+                <p className="font-body text-xs text-ink/45">Using your signed-in account.</p>
+              </div>
+            ) : (
+              <>
+                <Field label="Your name" name="name" required placeholder="Full name" />
+                <Field label="Email" name="email" type="email" required placeholder="you@example.com" />
+              </>
+            )}
             <Field label="Phone" name="phone" type="tel" required placeholder="Including country code" />
           </fieldset>
 

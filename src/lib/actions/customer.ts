@@ -85,6 +85,7 @@ export async function cancelBooking(_prev: ActionResult, formData: FormData): Pr
         currentStatus: booking.status,
         newStatus: "CANCELLED",
         actorId: user.id,
+        eventType: "BOOKING_CANCELLED_BY_CUSTOMER",
         context: { cancelledBy: "customer", reason: parsed.data.reason },
       });
       if (booking.coordinatorId) {
