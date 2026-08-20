@@ -38,6 +38,7 @@ export async function transitionBooking(
     currentStatus: BookingStatus;
     newStatus: BookingStatus;
     actorId: string | null;
+    eventType?: string;
     context?: Record<string, unknown>;
   }
 ) {
@@ -54,6 +55,7 @@ export async function transitionBooking(
   await recordEvent(tx, {
     bookingRequestId: params.bookingId,
     actorId: params.actorId,
+    eventType: params.eventType ?? `STATUS_${params.newStatus}`,
     previousStatus: params.currentStatus,
     newStatus: params.newStatus,
     context: params.context,
