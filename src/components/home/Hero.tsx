@@ -27,7 +27,7 @@ export function Hero() {
       <div className="relative flex min-h-[86vh] items-end overflow-hidden bg-pineDark sm:min-h-[92vh]">
         <Image
           src={HERO_IMAGE}
-          alt="Mitre Peak rising above the still, dark water of Milford Sound in Fiordland, New Zealand"
+          alt="The Taj Mahal at sunrise in Agra, India"
           fill
           priority
           sizes="100vw"
@@ -42,7 +42,7 @@ export function Hero() {
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease }}
           >
-            <RouteLine from="Cape Reinga" to="Bluff" tone="dark" className="mb-7 text-paper/50" />
+            <RouteLine from="Kashmir" to="Kanyakumari" tone="dark" className="mb-7 text-paper/50" />
           </motion.div>
 
           <motion.h1
@@ -51,7 +51,7 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.08, ease }}
             className="max-w-3xl font-display text-4xl italic leading-[1.08] text-paper sm:text-6xl lg:text-[4.25rem]"
           >
-            New Zealand, at the pace of a private road.
+            India, at the pace of a private road.
           </motion.h1>
 
           <motion.p
