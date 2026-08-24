@@ -66,7 +66,7 @@ function Section({
                 <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 font-body text-xs text-ink/55">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5 text-gold" aria-hidden />
-                    {new Date(a.bookingRequest.travelDate).toLocaleDateString("en-NZ", { dateStyle: "medium", timeZone: "Pacific/Auckland" })}
+                    {new Date(a.bookingRequest.travelDate).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" })}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5 text-gold" aria-hidden />
