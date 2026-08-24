@@ -1,9 +1,9 @@
-const NZ_TZ = "Pacific/Auckland";
+const INDIA_TZ = "Asia/Kolkata";
 
-export function formatNZDate(date: Date | string, style: "full" | "medium" | "short" = "medium"): string {
-  return new Date(date).toLocaleDateString("en-NZ", { dateStyle: style, timeZone: NZ_TZ });
+export function formatIndiaDate(date: Date | string, style: "full" | "medium" | "short" = "medium"): string {
+  return new Date(date).toLocaleDateString("en-IN", { dateStyle: style, timeZone: INDIA_TZ });
 }
 
-export function formatNZDateTime(date: Date | string, dateStyle: "full" | "medium" | "short" = "medium"): string {
-  return new Date(date).toLocaleString("en-NZ", { dateStyle, timeStyle: "short", timeZone: NZ_TZ });
+export function formatIndiaDateTime(date: Date | string, dateStyle: "full" | "medium" | "short" = "medium"): string {
+  return new Date(date).toLocaleString("en-IN", { dateStyle, timeStyle: "short", timeZone: INDIA_TZ });
 }
