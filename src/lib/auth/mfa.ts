@@ -49,7 +49,7 @@ export function decryptSecret(stored: string): string {
 
 export function generateTotpSecret(accountLabel: string): { secret: string; otpauthUrl: string } {
   const totp = new OTPAuth.TOTP({
-    issuer: "Southbound",
+    issuer: "India Trails",
     label: accountLabel,
     algorithm: "SHA1",
     digits: 6,
@@ -62,7 +62,7 @@ export function generateTotpSecret(accountLabel: string): { secret: string; otpa
 /** Verifies a 6-digit TOTP code, allowing one 30s step of clock drift either way. */
 export function verifyTotpCode(secretBase32: string, code: string): boolean {
   const totp = new OTPAuth.TOTP({
-    issuer: "Southbound",
+    issuer: "India Trails",
     algorithm: "SHA1",
     digits: 6,
     period: 30,
