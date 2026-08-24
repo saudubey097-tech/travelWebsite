@@ -1,7 +1,7 @@
-# Southbound
+# India Trails
 
 An original, independent travel-booking concept for private day tours,
-point-to-point transfers, and hourly driver hire in New Zealand — built as
+point-to-point transfers, and hourly driver hire in India — built as
 its own product, not a copy of any existing site. It's inspired by the
 *category* (per-vehicle private transport booking), not by any single
 company's branding, copy, or assets.
