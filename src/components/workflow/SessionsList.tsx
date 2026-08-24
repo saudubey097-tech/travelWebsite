@@ -5,7 +5,7 @@ import { Laptop } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { revokeSession, revokeAllOtherSessions } from "@/lib/actions/security";
-import { formatNZDateTime } from "@/lib/format";
+import { formatIndiaDateTime } from "@/lib/format";
 
 export interface SessionItem {
   id: string;
@@ -57,7 +57,7 @@ export function SessionsList({ sessions, currentSessionId }: { sessions: Session
                   {s.id === currentSessionId && <span className="ml-2 font-mono text-[10px] uppercase text-pine">This device</span>}
                 </p>
                 <p className="font-mono text-[10px] uppercase text-ink/40">
-                  {s.ipAddress ?? "Unknown IP"} · Active {formatNZDateTime(s.lastActiveAt)}
+                  {s.ipAddress ?? "Unknown IP"} · Active {formatIndiaDateTime(s.lastActiveAt)}
                 </p>
               </div>
             </div>
