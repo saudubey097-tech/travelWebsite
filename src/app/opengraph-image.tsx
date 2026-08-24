@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Southbound — Private drivers & day trips across New Zealand";
+export const alt = "India Trails — Private drivers & day trips across India";
 
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -33,15 +33,15 @@ export default function OpengraphImage() {
           >
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#C99A3C" }} />
           </div>
-          <div style={{ color: "#F2EEE3", fontSize: 30, letterSpacing: 1 }}>Southbound</div>
+          <div style={{ color: "#F2EEE3", fontSize: 30, letterSpacing: 1 }}>India Trails</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ color: "#F2EEE3", fontSize: 60, lineHeight: 1.15, maxWidth: 900 }}>
-            New Zealand, at the pace of a private road.
+            India, at the pace of a private road.
           </div>
           <div style={{ color: "rgba(242,238,227,0.7)", fontSize: 26, maxWidth: 760 }}>
-            Private drivers, day trips and transfers the length of New Zealand.
+            Private drivers, day trips and transfers the length of India.
           </div>
         </div>
 

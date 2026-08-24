@@ -80,7 +80,7 @@ export function NotificationBell({ initial }: { initial: NotificationItem[] }) {
                   <p className="font-body text-sm font-medium text-ink">{n.title}</p>
                   <p className="mt-0.5 font-body text-xs text-ink/60">{n.body}</p>
                   <p className="mt-1 font-mono text-[10px] uppercase tracking-wide text-ink/35">
-                    {new Date(n.createdAt).toLocaleString("en-NZ", { dateStyle: "medium", timeStyle: "short", timeZone: "Pacific/Auckland" })}
+                    {new Date(n.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })}
                   </p>
                 </a>
               ))}

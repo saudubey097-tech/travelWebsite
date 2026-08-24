@@ -27,7 +27,7 @@ function isVehicleClass(v: string | null): v is VehicleClass {
   return v === "sedan" || v === "van" || v === "xlVan";
 }
 
-/** Turns a tour slug like "northland-harbour-day" into "Northland harbour day" for display only. */
+/** Turns a tour slug like "delhi-agra-heritage-day" into a readable title for display only. */
 function humanizeSlug(slug: string): string {
   const words = slug.replace(/-/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
@@ -154,7 +154,7 @@ export function BookingForm({ tours = [], prefill }: BookingFormProps) {
             {quotedPrice && !Number.isNaN(Number(quotedPrice)) && (
               <div className="flex gap-2">
                 <dt className="text-ink/45">Indicative price</dt>
-                <dd className="text-pine">{formatMoney({ amount: Number(quotedPrice), currency: "NZD" })}</dd>
+                <dd className="text-pine">{formatMoney({ amount: Number(quotedPrice), currency: "INR" })}</dd>
               </div>
             )}
           </dl>

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatNZDateTime } from "@/lib/format";
+import { formatIndiaDateTime } from "@/lib/format";
 
 export interface NotificationHistoryItem {
   id: string;
@@ -25,7 +25,7 @@ export function NotificationHistoryPanel({ notifications }: { notifications: Not
               <p className="font-body text-sm text-ink">{n.title}</p>
               <p className="font-body text-xs text-ink/55">{n.body}</p>
               <p className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-ink/35">
-                {formatNZDateTime(n.createdAt)}
+                {formatIndiaDateTime(n.createdAt)}
               </p>
             </li>
           ))}

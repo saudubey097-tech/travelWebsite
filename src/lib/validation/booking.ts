@@ -58,7 +58,7 @@ export const updateBookingDetailsSchema = z.object({
   dropoffAddress: z.string().trim().max(200).optional(),
   vehicleClass: vehicleClassSchema.optional(),
   notes: z.string().trim().max(2000).optional(),
-  // Collected from coordinators in whole NZD, converted to cents in the action.
+  // Collected from coordinators in whole INR, converted to cents in the action.
   confirmedPrice: z.coerce.number().positive().max(100_000).optional(),
 });
 

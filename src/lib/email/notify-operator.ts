@@ -43,7 +43,7 @@ export async function sendOperatorNotificationEmail(input: OperatorNotificationI
     input.dropoff ? `Drop-off: ${input.dropoff}` : null,
     input.tour ? `Tour: ${input.tour}` : null,
     input.vehicle ? `Vehicle: ${input.vehicle}` : null,
-    input.quotedPrice ? `Indicative quote: NZ$${(input.quotedPrice / 100).toFixed(0)}` : null,
+    input.quotedPrice ? `Indicative quote: ₹${(input.quotedPrice / 100).toFixed(0)}` : null,
     input.notes ? `Notes: ${input.notes}` : null,
   ]
     .filter(Boolean)
@@ -51,7 +51,7 @@ export async function sendOperatorNotificationEmail(input: OperatorNotificationI
 
   return getEmailAdapter().send({
     to: recipient,
-    subject: `New Southbound booking request ${input.reference}`,
+    subject: `New India Trails booking request ${input.reference}`,
     text: `${details}\n\nTraveller\n${input.name}\n${input.email}\n${input.phone}`,
     html: `<pre>${details}</pre><p>Traveller: ${input.name} (${input.email}, ${input.phone})</p>`,
   });

@@ -79,7 +79,7 @@ export function ConversationPanel({
                   }`}
                 >
                   {m.sender.name} ·{" "}
-                  {new Date(m.createdAt).toLocaleString("en-NZ", { dateStyle: "short", timeStyle: "short", timeZone: "Pacific/Auckland" })}
+                  {new Date(m.createdAt).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Kolkata" })}
                 </p>
               </div>
             </div>

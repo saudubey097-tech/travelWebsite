@@ -25,16 +25,16 @@ export function Footer() {
   return (
     <footer className="border-t border-lineDark bg-pineDark text-paper">
       <div className="container-edit py-16">
-        <RouteLine from="Cape Reinga" to="Bluff" tone="dark" className="mb-12 text-paper/40" />
+        <RouteLine from="Kashmir" to="Kanyakumari" tone="dark" className="mb-12 text-paper/40" />
 
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2 font-display text-lg text-paper">
               <Compass className="h-5 w-5 text-gold" strokeWidth={1.75} aria-hidden />
-              Southbound
+              India Trails
             </div>
             <p className="mt-3 max-w-xs font-body text-sm leading-relaxed text-paper/60">
-              Private drivers, day trips and transfers the length of New Zealand — one
+              Private drivers, day trips and transfers the length of India — one
               vehicle, one local driver, one fixed price.
             </p>
             <div className="mt-5 flex items-center gap-2 font-body text-xs text-paper/50">
@@ -75,7 +75,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-lineDark px-4 py-5 text-center font-mono text-[11px] text-paper/40 sm:px-6">
-        © {new Date().getFullYear()} Southbound — independently owned and operated in New Zealand.
+        © {new Date().getFullYear()} India Trails — independently owned and operated in India.
       </div>
     </footer>
   );

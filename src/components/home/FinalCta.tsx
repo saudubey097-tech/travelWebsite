@@ -11,7 +11,7 @@ export function FinalCta() {
       <div className="relative h-[420px] w-full sm:h-[460px]">
         <Image
           src={ROAD_IMAGE}
-          alt="An open highway winding toward snow-capped mountains in New Zealand's South Island"
+          alt="An open highway winding toward snow-capped mountains in India's South Island"
           fill
           sizes="100vw"
           className="object-cover"

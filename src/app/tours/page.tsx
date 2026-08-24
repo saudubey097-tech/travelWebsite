@@ -6,7 +6,7 @@ import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata: Metadata = {
   title: "Day Tours",
-  description: "Private return day trips across New Zealand, one flat price per vehicle.",
+  description: "Private return day trips across India, one flat price per vehicle.",
   alternates: { canonical: "/tours" },
 };
 

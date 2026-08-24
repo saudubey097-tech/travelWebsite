@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Request a Booking",
-  description: "Send Southbound your trip details and receive a confirmed booking response.",
+  description: "Send India Trails your trip details and receive a confirmed booking response.",
   alternates: { canonical: "/book" },
 };
 

@@ -18,7 +18,7 @@ export async function Navbar() {
       <div className="container-edit flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-display text-lg text-pine">
           <Compass className="h-5 w-5 text-gold" strokeWidth={1.75} aria-hidden />
-          Southbound
+          India Trails
         </Link>
 
         <nav className="hidden items-center gap-8 font-body text-sm text-ink/80 md:flex">
@@ -30,7 +30,7 @@ export async function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <span className="hidden font-mono text-xs text-ink/50 sm:inline">NZD</span>
+          <span className="hidden font-mono text-xs text-ink/50 sm:inline">INR</span>
 
           {user ? (
             <Link

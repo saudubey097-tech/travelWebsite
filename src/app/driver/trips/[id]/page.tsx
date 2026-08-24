@@ -33,7 +33,7 @@ export default async function DriverTripDetailPage({ params }: { params: Promise
           <dl className="grid gap-3 font-body text-sm sm:grid-cols-2">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gold" aria-hidden />
-              {new Date(booking.travelDate).toLocaleDateString("en-NZ", { dateStyle: "full", timeZone: "Pacific/Auckland" })}
+              {new Date(booking.travelDate).toLocaleDateString("en-IN", { dateStyle: "full", timeZone: "Asia/Kolkata" })}
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gold" aria-hidden />

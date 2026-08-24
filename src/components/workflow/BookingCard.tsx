@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Calendar, MapPin, Users, Flag } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/workflow/StatusBadge";
-import { formatNZDate } from "@/lib/format";
+import { formatIndiaDate } from "@/lib/format";
 import type { BookingStatus, ServiceType } from "@prisma/client";
 
 const SERVICE_LABEL: Record<ServiceType, string> = {
@@ -51,7 +51,7 @@ export function BookingCard({ booking, href, actions }: { booking: BookingCardDa
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 font-body text-xs text-ink/55">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 text-gold" aria-hidden />
-            {formatNZDate(booking.travelDate)}
+            {formatIndiaDate(booking.travelDate)}
           </span>
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-gold" aria-hidden />

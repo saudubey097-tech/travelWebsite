@@ -2,7 +2,7 @@ export type VehicleClass = "sedan" | "van" | "xlVan";
 
 export interface Money {
   amount: number;
-  currency: "NZD";
+  currency: "INR";
 }
 
 export interface RouteStop {

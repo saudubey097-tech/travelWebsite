@@ -27,7 +27,7 @@ export default async function AcceptInvitationPage({ params }: { params: Promise
     <section className="container-edit max-w-md py-16 sm:py-20">
       <SectionHeading
         eyebrow="Staff invitation"
-        title={`Join Southbound as a ${roleLabel}`}
+        title={`Join India Trails as a ${roleLabel}`}
         description={`Setting up ${invitation.email}. Choose a password to finish creating your account.`}
       />
       <div className="mt-8">

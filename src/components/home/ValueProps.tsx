@@ -7,7 +7,7 @@ export function ValueProps() {
     <section className="container-edit py-20 sm:py-24">
       <Reveal>
         <SectionHeading
-          eyebrow="Why Southbound"
+          eyebrow="Why India Trails"
           title="Straightforward, local, private."
           description="Every trip runs on the same five commitments, whether it's a two-hour transfer or a full day across the South Island."
         />

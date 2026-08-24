@@ -13,7 +13,7 @@ import { PriorityToggle } from "@/components/workflow/PriorityToggle";
 import { RevokeAssignmentButton } from "@/components/workflow/RevokeAssignmentButton";
 import { AssignmentHistory } from "@/components/workflow/AssignmentHistory";
 import { Card } from "@/components/ui/Card";
-import { formatNZDate } from "@/lib/format";
+import { formatIndiaDate } from "@/lib/format";
 
 const ASSIGNABLE = ["PENDING_ASSIGNMENT", "REASSIGNMENT_REQUIRED"];
 
@@ -119,7 +119,7 @@ export default async function CoordinatorBookingDetailPage({ params }: { params:
           <span className="font-mono text-[11px] uppercase tracking-wide text-ink/45">Quick facts</span>
           <div className="mt-2 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gold" aria-hidden />
-            {formatNZDate(booking.travelDate)}
+            {formatIndiaDate(booking.travelDate)}
           </div>
           <div className="mt-1.5 flex items-center gap-2">
             <Users className="h-4 w-4 text-gold" aria-hidden />

@@ -7,7 +7,7 @@ import { Timeline } from "@/components/workflow/Timeline";
 import { ConversationPanel } from "@/components/workflow/ConversationPanel";
 import { Card } from "@/components/ui/Card";
 import { formatMoney, vehicleLabel } from "@/lib/pricing";
-import { formatNZDate } from "@/lib/format";
+import { formatIndiaDate } from "@/lib/format";
 import { CancelBookingButton } from "@/components/workflow/CancelBookingButton";
 import { BookingNotesForm } from "@/components/workflow/BookingNotesForm";
 import { NotificationHistoryPanel } from "@/components/workflow/NotificationHistoryPanel";
@@ -39,7 +39,7 @@ export default async function CustomerBookingDetailPage({ params }: { params: Pr
           <dl className="grid gap-3 font-body text-sm sm:grid-cols-2">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gold" aria-hidden />
-              {formatNZDate(booking.travelDate, "full")}
+              {formatIndiaDate(booking.travelDate, "full")}
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gold" aria-hidden />
@@ -89,9 +89,9 @@ export default async function CustomerBookingDetailPage({ params }: { params: Pr
           </span>
           <div className="mt-1 font-display text-2xl text-pine">
             {booking.confirmedPriceCents
-              ? formatMoney({ amount: booking.confirmedPriceCents / 100, currency: "NZD" })
+              ? formatMoney({ amount: booking.confirmedPriceCents / 100, currency: "INR" })
               : booking.quotedPriceCents
-                ? formatMoney({ amount: booking.quotedPriceCents / 100, currency: "NZD" })
+                ? formatMoney({ amount: booking.quotedPriceCents / 100, currency: "INR" })
                 : "Pending"}
           </div>
           {!booking.confirmedPriceCents && (

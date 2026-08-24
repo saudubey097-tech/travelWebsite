@@ -5,7 +5,7 @@ import { getAdminSummary, getAdminAlerts } from "@/lib/actions/admin";
 import { DashboardMetricCard } from "@/components/workflow/DashboardMetricCard";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { formatNZDateTime } from "@/lib/format";
+import { formatIndiaDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Admin overview", robots: { index: false } };
 
@@ -50,7 +50,7 @@ export default async function AdminOverviewPage() {
                         {b.reference}
                       </Link>
                       <span className="ml-2 font-mono text-[10px] uppercase text-ink/40">
-                        {formatNZDateTime(b.createdAt)}
+                        {formatIndiaDateTime(b.createdAt)}
                       </span>
                     </li>
                   ))}
@@ -72,7 +72,7 @@ export default async function AdminOverviewPage() {
                         {a.driver.name}
                       </Link>
                       <span className="ml-2 font-mono text-[10px] uppercase text-ink/40">
-                        {formatNZDateTime(a.offeredAt)}
+                        {formatIndiaDateTime(a.offeredAt)}
                       </span>
                     </li>
                   ))}

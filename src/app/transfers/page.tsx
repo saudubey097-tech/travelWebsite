@@ -5,7 +5,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 export const metadata: Metadata = {
   title: "Transfers",
-  description: "Instant price, any pickup and drop-off across New Zealand.",
+  description: "Instant price, any pickup and drop-off across India.",
   alternates: { canonical: "/transfers" },
 };
 
@@ -14,7 +14,7 @@ export default function TransfersPage() {
     <section className="container-edit max-w-3xl py-16 sm:py-20">
       <SectionHeading
         eyebrow="Transfers"
-        title="Anywhere in New Zealand — instant price."
+        title="Anywhere in India — instant price."
         description="Enter your pickup and drop-off and we quote the whole vehicle in seconds, sized to your group. No fixed routes, no hidden fees."
       />
 

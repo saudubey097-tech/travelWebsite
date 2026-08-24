@@ -1,4 +1,4 @@
-// Southbound — role-workflow database schema.
+// India Trails — role-workflow database schema.
 //
 // This replaces the earlier speculative schema (a NextAuth-adapter/Stripe/
 // Tour-catalog design that was never migrated — no migrations existed in
@@ -268,7 +268,7 @@ model BookingRequest {
   // coordinator and is the only figure ever presented as final.
   quotedPriceCents    Int?    @map("quoted_price_cents")
   confirmedPriceCents Int?    @map("confirmed_price_cents")
-  currency            String  @default("NZD")
+  currency            String  @default("INR")
 
   cancelledAt DateTime? @map("cancelled_at")
   // Coordinator-set urgency flag surfaced in the queue view.

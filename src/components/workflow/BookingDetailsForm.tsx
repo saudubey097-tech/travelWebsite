@@ -51,7 +51,7 @@ export function BookingDetailsForm({
           <textarea name="notes" rows={3} defaultValue={notes ?? ""} className="input resize-y" />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-xs uppercase text-ink/50">Confirmed price (NZD)</span>
+          <span className="font-mono text-xs uppercase text-ink/50">Confirmed price (INR)</span>
           <input
             type="number"
             name="confirmedPrice"
