@@ -20,7 +20,7 @@ export function Destinations() {
             <div className="group relative h-80 overflow-hidden rounded-md">
               <Image
                 src={d.image}
-                alt={`${d.name}, ${d.region}, New Zealand`}
+                alt={`${d.name}, ${d.region}, India`}
                 fill
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                 className="object-cover transition-transform duration-500 ease-signature group-hover:scale-110"
