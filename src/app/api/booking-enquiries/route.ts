@@ -5,7 +5,7 @@ import { submitBookingRequest } from "@/lib/booking/submit";
 import { sendOperatorNotificationEmail } from "@/lib/email/notify-operator";
 
 // Field names/shape here match the existing public BookingForm.tsx
-// (bookingType, guests, quotedPrice in whole NZD) — this route is the
+// (bookingType, guests, quotedPrice in whole INR) — this route is the
 // integration seam that translates that public contract into the
 // booking_requests domain model (serviceType, paxCount, cents).
 //
