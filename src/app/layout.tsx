@@ -25,38 +25,38 @@ const mono = IBM_Plex_Mono({
 
 // Update to the production domain before launch — this backs canonical
 // links, the sitemap and the default Open Graph/Twitter image URLs.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://southbound.example.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://india-trails.example.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Southbound — Private drivers & day trips across New Zealand",
-    template: "%s · Southbound",
+    default: "India Trails — Private drivers & day trips across India",
+    template: "%s · India Trails",
   },
   description:
-    "Book a private driver, day tour or point-to-point transfer anywhere in New Zealand. One vehicle, one local driver, one fixed price.",
+    "Book a private driver, day tour or point-to-point transfer anywhere in India. One vehicle, one local driver, one fixed price.",
   keywords: [
-    "New Zealand private driver",
-    "New Zealand day tours",
-    "New Zealand airport transfer",
-    "private tour New Zealand",
-    "hourly driver hire New Zealand",
+    "India private driver",
+    "India day tours",
+    "India airport transfer",
+    "private tour India",
+    "hourly driver hire India",
   ],
-  applicationName: "Southbound",
+  applicationName: "India Trails",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    siteName: "Southbound",
-    title: "Southbound — Private drivers & day trips across New Zealand",
+    siteName: "India Trails",
+    title: "India Trails — Private drivers & day trips across India",
     description:
-      "Book a private driver, day tour or point-to-point transfer anywhere in New Zealand. One vehicle, one local driver, one fixed price.",
+      "Book a private driver, day tour or point-to-point transfer anywhere in India. One vehicle, one local driver, one fixed price.",
     url: "/",
-    locale: "en_NZ",
+    locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Southbound — Private drivers & day trips across New Zealand",
-    description: "Private drivers, day trips and transfers the length of New Zealand.",
+    title: "India Trails — Private drivers & day trips across India",
+    description: "Private drivers, day trips and transfers the length of India.",
   },
   robots: { index: true, follow: true },
 };
