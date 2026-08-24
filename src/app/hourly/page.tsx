@@ -22,14 +22,14 @@ interface Plan extends HourlyPlan {
 const PLANS: Plan[] = [
   {
     vehicleClass: "sedan",
-    ratePerHour: { amount: 80, currency: "NZD" },
+    ratePerHour: { amount: 80, currency: "INR" },
     minimumHours: 3,
     includedKmPerHour: 40,
     useCases: ["Cruise-ship days for two", "Wine-region tastings", "Point-to-point sightseeing"],
   },
   {
     vehicleClass: "van",
-    ratePerHour: { amount: 105, currency: "NZD" },
+    ratePerHour: { amount: 105, currency: "INR" },
     minimumHours: 3,
     includedKmPerHour: 40,
     recommended: true,
@@ -37,7 +37,7 @@ const PLANS: Plan[] = [
   },
   {
     vehicleClass: "xlVan",
-    ratePerHour: { amount: 130, currency: "NZD" },
+    ratePerHour: { amount: 130, currency: "INR" },
     minimumHours: 3,
     includedKmPerHour: 40,
     useCases: ["Weddings and events", "Tour groups up to 11", "Corporate off-sites"],
