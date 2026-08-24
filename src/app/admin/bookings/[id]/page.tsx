@@ -12,7 +12,7 @@ import { ResendNotificationButton } from "@/components/workflow/ResendNotificati
 import { AssignmentHistory } from "@/components/workflow/AssignmentHistory";
 import { Card } from "@/components/ui/Card";
 import { formatMoney } from "@/lib/pricing";
-import { formatNZDate, formatNZDateTime } from "@/lib/format";
+import { formatIndiaDate, formatIndiaDateTime } from "@/lib/format";
 
 export default async function AdminBookingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -52,7 +52,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Promi
           <div className="mt-3 grid gap-2 border-t border-line pt-3 font-body text-sm text-ink/65 sm:grid-cols-2">
             <span className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gold" aria-hidden />
-              {formatNZDate(booking.travelDate)}
+              {formatIndiaDate(booking.travelDate)}
             </span>
             <span className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gold" aria-hidden />
@@ -72,7 +72,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Promi
             </span>
             <span>
               <span className="block font-mono text-[11px] uppercase text-ink/40">Confirmed price</span>
-              {booking.confirmedPriceCents ? formatMoney({ amount: booking.confirmedPriceCents / 100, currency: "NZD" }) : "—"}
+              {booking.confirmedPriceCents ? formatMoney({ amount: booking.confirmedPriceCents / 100, currency: "INR" }) : "—"}
             </span>
           </div>
         </Card>
@@ -125,7 +125,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Promi
                     <p className="font-body text-sm text-ink/80">
                       {n.title} <span className="text-ink/40">→ {n.user.name}</span>
                     </p>
-                    <p className="font-mono text-[10px] uppercase text-ink/35">{formatNZDateTime(n.createdAt)}</p>
+                    <p className="font-mono text-[10px] uppercase text-ink/35">{formatIndiaDateTime(n.createdAt)}</p>
                   </div>
                   <ResendNotificationButton notificationId={n.id} />
                 </li>
@@ -145,7 +145,7 @@ export default async function AdminBookingDetailPage({ params }: { params: Promi
               .filter((e) => e.context && typeof e.context === "object" && (e.context as Record<string, unknown>).reason)
               .map((e) => (
                 <p key={e.id} className="font-body text-xs text-ink/50">
-                  <span className="font-mono uppercase text-ink/35">{formatNZDateTime(e.createdAt)}</span> —{" "}
+                  <span className="font-mono uppercase text-ink/35">{formatIndiaDateTime(e.createdAt)}</span> —{" "}
                   {String((e.context as Record<string, unknown>).reason)}
                 </p>
               ))}
