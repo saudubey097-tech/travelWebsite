@@ -17,9 +17,9 @@ export async function sendVerificationEmail(params: { to: string; name: string; 
   const link = `${siteUrl()}/verify-email/${params.token}`;
   return getEmailAdapter().send({
     to: params.to,
-    subject: "Verify your Southbound account",
-    text: `Hi ${params.name},\n\nConfirm your email to finish setting up your Southbound account:\n${link}\n\nThis link expires in 24 hours. If you didn't create an account, you can ignore this email.`,
-    html: `<p>Hi ${escapeHtml(params.name)},</p><p>Confirm your email to finish setting up your Southbound account:</p><p><a href="${link}">${link}</a></p><p>This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>`,
+    subject: "Verify your India Trails account",
+    text: `Hi ${params.name},\n\nConfirm your email to finish setting up your India Trails account:\n${link}\n\nThis link expires in 24 hours. If you didn't create an account, you can ignore this email.`,
+    html: `<p>Hi ${escapeHtml(params.name)},</p><p>Confirm your email to finish setting up your India Trails account:</p><p><a href="${link}">${link}</a></p><p>This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>`,
   });
 }
 
@@ -27,7 +27,7 @@ export async function sendPasswordResetEmail(params: { to: string; name: string;
   const link = `${siteUrl()}/reset-password/${params.token}`;
   return getEmailAdapter().send({
     to: params.to,
-    subject: "Reset your Southbound password",
+    subject: "Reset your India Trails password",
     text: `Hi ${params.name},\n\nWe received a request to reset your password. This link expires in 1 hour:\n${link}\n\nIf you didn't request this, you can ignore this email — your password won't change.`,
     html: `<p>Hi ${escapeHtml(params.name)},</p><p>We received a request to reset your password. This link expires in 1 hour:</p><p><a href="${link}">${link}</a></p><p>If you didn't request this, you can ignore this email — your password won't change.</p>`,
   });
@@ -43,9 +43,9 @@ export async function sendStaffInvitationEmail(params: {
   const roleLabel = params.role.charAt(0) + params.role.slice(1).toLowerCase();
   return getEmailAdapter().send({
     to: params.to,
-    subject: `You've been invited to join Southbound as a ${roleLabel}`,
-    text: `Hi,\n\n${params.invitedByName} has invited you to join Southbound as a ${roleLabel}. Set up your account and choose your own password here:\n${link}\n\nThis invitation expires in 7 days.`,
-    html: `<p>Hi,</p><p>${escapeHtml(params.invitedByName)} has invited you to join Southbound as a ${escapeHtml(roleLabel)}. Set up your account and choose your own password here:</p><p><a href="${link}">${link}</a></p><p>This invitation expires in 7 days.</p>`,
+    subject: `You've been invited to join India Trails as a ${roleLabel}`,
+    text: `Hi,\n\n${params.invitedByName} has invited you to join India Trails as a ${roleLabel}. Set up your account and choose your own password here:\n${link}\n\nThis invitation expires in 7 days.`,
+    html: `<p>Hi,</p><p>${escapeHtml(params.invitedByName)} has invited you to join India Trails as a ${escapeHtml(roleLabel)}. Set up your account and choose your own password here:</p><p><a href="${link}">${link}</a></p><p>This invitation expires in 7 days.</p>`,
   });
 }
 
