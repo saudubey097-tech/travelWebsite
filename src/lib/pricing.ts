@@ -1,7 +1,7 @@
 import { Money, TransferQuote, VehicleClass } from "@/types";
 
 export function formatMoney(m: Money): string {
-  return new Intl.NumberFormat("en-NZ", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: m.currency,
     maximumFractionDigits: 0,
@@ -22,8 +22,8 @@ export function vehicleLabel(v: VehicleClass): string {
 // in production this would call a routing API (distance/duration) and a
 // real rates table, but the shape of TransferQuote is what components use,
 // so replacing this function is the only change needed later.
-const BASE_FARE: Record<VehicleClass, number> = { sedan: 45, van: 65, xlVan: 85 };
-const PER_KM: Record<VehicleClass, number> = { sedan: 1.35, van: 1.65, xlVan: 1.95 };
+const BASE_FARE: Record<VehicleClass, number> = { sedan: 900, van: 1400, xlVan: 1900 };
+const PER_KM: Record<VehicleClass, number> = { sedan: 16, van: 22, xlVan: 28 };
 
 export function estimateTransfer(
   pickup: string,
@@ -39,7 +39,7 @@ export function estimateTransfer(
     distanceKm,
     durationMinutes,
     vehicleClass,
-    price: { amount, currency: "NZD" },
+    price: { amount, currency: "INR" },
     depositPct: 20,
   };
 }
