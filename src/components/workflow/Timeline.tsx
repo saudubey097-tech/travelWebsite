@@ -26,10 +26,10 @@ export function Timeline({ events, dense = false }: { events: TimelineEvent[]; d
           <div>
             <p className="font-body text-sm font-medium text-ink">{statusLabel(event.newStatus)}</p>
             <p className="font-mono text-[11px] uppercase tracking-wide text-ink/40">
-              {new Date(event.createdAt).toLocaleString("en-NZ", {
+              {new Date(event.createdAt).toLocaleString("en-IN", {
                 dateStyle: "medium",
                 timeStyle: dense ? undefined : "short",
-                timeZone: "Pacific/Auckland",
+                timeZone: "Asia/Kolkata",
               })}
               {event.actor ? ` · ${event.actor.name}` : ""}
             </p>
