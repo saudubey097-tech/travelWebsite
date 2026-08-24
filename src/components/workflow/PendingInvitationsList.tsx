@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { revokeInvitation } from "@/lib/actions/invitations";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatNZDate } from "@/lib/format";
+import { formatIndiaDate } from "@/lib/format";
 
 export interface PendingInvitation {
   id: string;
@@ -31,7 +31,7 @@ export function PendingInvitationsList({ invitations }: { invitations: PendingIn
                 {inv.name} <span className="text-ink/45">— {inv.email}</span>
               </p>
               <p className="font-mono text-[10px] uppercase text-ink/35">
-                Invited by {inv.invitedBy.name} · Expires {formatNZDate(inv.expiresAt)}
+                Invited by {inv.invitedBy.name} · Expires {formatIndiaDate(inv.expiresAt)}
               </p>
             </div>
             <div className="flex items-center gap-2">
