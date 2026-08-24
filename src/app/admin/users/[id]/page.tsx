@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { DriverProfileForm } from "@/components/workflow/DriverProfileForm";
 import { UserRow } from "@/components/workflow/UserRow";
-import { formatNZDate, formatNZDateTime } from "@/lib/format";
+import { formatIndiaDate, formatIndiaDateTime } from "@/lib/format";
 
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,7 +40,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             )}
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-gold" aria-hidden />
-              Joined {formatNZDate(user.createdAt)}
+              Joined {formatIndiaDate(user.createdAt)}
             </span>
           </div>
           <div className="mt-3 flex gap-6 border-t border-line pt-3 font-body text-sm">
@@ -101,7 +101,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                     {entry.previousValue && entry.newValue ? ` — ${entry.previousValue} → ${entry.newValue}` : ""}
                   </p>
                   <p className="font-mono text-[10px] uppercase text-ink/35">
-                    {formatNZDateTime(entry.createdAt)} · {entry.actor.name}
+                    {formatIndiaDateTime(entry.createdAt)} · {entry.actor.name}
                   </p>
                 </li>
               ))}
