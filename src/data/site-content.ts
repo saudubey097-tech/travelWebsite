@@ -72,27 +72,27 @@ export interface Destination {
 
 export const DESTINATIONS: Destination[] = [
   {
-    name: "Bay of Islands",
-    region: "Northland",
-    description: "Sheltered turquoise water, historic waterfront towns and the country's founding harbour.",
+    name: "Agra & the Taj Mahal",
+    region: "Uttar Pradesh",
+    description: "Timeless Mughal architecture, riverside views and the classic Golden Triangle journey.",
     image: "https://images.unsplash.com/photo-1686941224638-5aaff456aa32?w=1200&q=80&auto=format&fit=crop",
   },
   {
-    name: "Rotorua & the Geothermal Valley",
-    region: "Bay of Plenty",
-    description: "Geysers, bubbling mud pools and towering redwoods, an easy private day from Auckland.",
+    name: "Jaipur & Amber Fort",
+    region: "Rajasthan",
+    description: "Royal forts, pink-hued streets and a day made for heritage, food and photographs.",
     image: "https://images.unsplash.com/photo-1783038845122-0b1517d66fa0?w=1200&q=80&auto=format&fit=crop",
   },
   {
-    name: "Milford Sound",
-    region: "Fiordland",
-    description: "Sheer cliffs and waterfalls dropping straight into the water — the drive is half the trip.",
+    name: "Varanasi",
+    region: "Uttar Pradesh",
+    description: "Ancient ghats, sacred rituals and the living culture of the Ganges.",
     image: "https://images.unsplash.com/photo-1518058891940-d71d20afa6d7?w=1200&q=80&auto=format&fit=crop",
   },
   {
-    name: "Queenstown & Lake Wakatipu",
-    region: "Otago",
-    description: "Alpine peaks running straight down to the lake — the country's base for a private driver day.",
+    name: "Kerala Backwaters",
+    region: "Kerala",
+    description: "Palm-lined waterways, village life and an easy escape into slow coastal India.",
     image: "https://images.unsplash.com/photo-1765114944961-80ca800fff35?w=1200&q=80&auto=format&fit=crop",
   },
 ];
