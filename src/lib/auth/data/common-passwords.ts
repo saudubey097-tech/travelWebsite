@@ -14,7 +14,7 @@ export const COMMON_PASSWORDS = new Set([
   "passw0rd", "p@ssw0rd", "p@ssword", "changeme", "changeme123",
   "letmein123", "superman", "batman", "starwars", "whatever",
   "freedom", "shadow", "michael", "jennifer", "hunter2", "temp1234",
-  "temppass", "guest1234", "test1234", "companyname1", "southbound1",
+  "temppass", "guest1234", "test1234", "companyname1", "india-trails1",
 ]);
 
 export function isCommonPassword(password: string): boolean {
